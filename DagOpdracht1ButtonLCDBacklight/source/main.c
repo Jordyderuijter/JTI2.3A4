@@ -48,7 +48,6 @@
 // Added by JTI2.3A4
 #include <stdbool.h>
 
-
 /*-------------------------------------------------------------------------*/
 /* global variable definitions                                             */
 /*-------------------------------------------------------------------------*/
@@ -101,6 +100,24 @@ static void SysMainBeatInterrupt(void *p)
     KbScan();
     CardCheckCard();
 }
+
+THREAD(Blink, arg)
+{   
+    printf("Blinking");
+    for (;;) {
+        LedControl(LED_ON);
+        LogMsg_P(LOG_INFO, PSTR("LAMPJE AAN"));
+        NutSleep(100);
+    }
+}
+THREAD(Blink2, arg)
+{         
+    for (;;) {
+        LedControl(LED_OFF);
+        LogMsg_P(LOG_INFO, PSTR("LAMPJE UIT"));
+        NutSleep(100);
+    }
+}   
 
 
 /* ����������������������������������������������������������������������� */
@@ -207,13 +224,15 @@ static void SysControlMainBeat(u_char OnOff)
 /* ����������������������������������������������������������������������� */
 int main(void)
 {
-	int t = 0;
+    	int t = 0;
         
         // Added by JTI2.3A4
         bool bLCDOn = false;
         int iLastButtonPress = 0;
-        
+       
 	
+
+        	
 	/* 
 	 * Kroeske: time struct uit nut/os time.h (http://www.ethernut.de/api/time_8h-source.html)
 	 *
@@ -252,13 +271,16 @@ int main(void)
     if (X12RtcGetClock(&gmt) == 0)
     {
 		LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
-    }
-
+    }    
 
     if (At45dbInit()==AT45DB041B)
     {
         // ......
     }
+    
+    NutThreadSetPriority(1);
+    NutThreadCreate("Blinking", Blink, NULL, 512);
+    NutThreadCreate("Blinking2", Blink2, NULL, 512);
 
 
     RcInit();
@@ -270,22 +292,21 @@ int main(void)
     /*
      * Increase our priority so we can feed the watchdog.
      */
-    NutThreadSetPriority(1);
+
 
 	/* Enable global interrupts */
 	sei();
-	
-    for (;;)
+        
+        for (;;)
     {
         NutSleep(100);
-		if( !((t++)%15) )
+    		if( !((t++)%15) )
 		{
                     // Content of outer if-block added by JTI2.3A4
                     LogMsg_P(LOG_INFO, PSTR("Looplogic"), t);
                     
                     if((KbGetButtonsPressedValue() ^ 0xFFFF) != 0)
                     {
-                        LogMsg_P(LOG_INFO, PSTR("Button pressed! Turning on the light..."));
                         
                         LcdBackLight(LCD_BACKLIGHT_ON);
                         iLastButtonPress = t;
@@ -299,11 +320,16 @@ int main(void)
                     }
 		}
 		
+
         WatchDogRestart();
     }
+    
+        
+        
 
     return(0);      // never reached, but 'main()' returns a non-void, so.....
 }
+
 /* ---------- end of module ------------------------------------------------ */
 
 /*@}*/

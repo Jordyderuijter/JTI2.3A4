@@ -1,0 +1,445 @@
+GAS LISTING C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s 			page 1
+
+
+   1               		.file	"main.c"
+   2               		.arch atmega2561
+   3               	__SREG__ = 0x3f
+   4               	__SP_H__ = 0x3e
+   5               	__SP_L__ = 0x3d
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  10               		.text
+  11               	.global	SysInitIO
+  12               		.type	SysInitIO, @function
+  13               	SysInitIO:
+  14               	/* prologue: frame size=0 */
+  15               	/* prologue end (size=0) */
+  16 0000 87EF      		ldi r24,lo8(-9)
+  17 0002 84B9      		out 36-0x20,r24
+  18 0004 8CE0      		ldi r24,lo8(12)
+  19 0006 8AB9      		out 42-0x20,r24
+  20 0008 8BB1      		in r24,43-0x20
+  21 000a 8C70      		andi r24,lo8(12)
+  22 000c 836F      		ori r24,lo8(-13)
+  23 000e 8BB9      		out 43-0x20,r24
+  24 0010 8EE8      		ldi r24,lo8(-114)
+  25 0012 8DB9      		out 45-0x20,r24
+  26 0014 8EB1      		in r24,46-0x20
+  27 0016 8E78      		andi r24,lo8(-114)
+  28 0018 8160      		ori r24,lo8(1)
+  29 001a 8EB9      		out 46-0x20,r24
+  30 001c 85B7      		in r24,85-0x20
+  31 001e 8068      		ori r24,lo8(-128)
+  32 0020 85BF      		out 85-0x20,r24
+  33 0022 85B7      		in r24,85-0x20
+  34 0024 8068      		ori r24,lo8(-128)
+  35 0026 85BF      		out 85-0x20,r24
+  36 0028 8EE0      		ldi r24,lo8(14)
+  37 002a 80BB      		out 48-0x20,r24
+  38 002c 81B3      		in r24,49-0x20
+  39 002e 8E70      		andi r24,lo8(14)
+  40 0030 816F      		ori r24,lo8(-15)
+  41 0032 81BB      		out 49-0x20,r24
+  42 0034 88E1      		ldi r24,lo8(24)
+  43 0036 83BB      		out 51-0x20,r24
+  44               	/* epilogue: frame size=0 */
+  45 0038 0895      		ret
+  46               	/* epilogue end (size=1) */
+  47               	/* function SysInitIO size 29 (28) */
+  48               		.size	SysInitIO, .-SysInitIO
+  49               		.data
+  50               	.LC0:
+  51 0000 426C 696E 		.string	"Blinking"
+  51      6B69 6E67 
+  51      00
+  52               	.LC1:
+  53 0009 426C 696E 		.string	"Blinking2"
+  53      6B69 6E67 
+  53      3200 
+GAS LISTING C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s 			page 2
+
+
+  54               		.text
+  55               	.global	NutAppMain
+  56               		.type	NutAppMain, @function
+  57               	NutAppMain:
+  58               	/* prologue: frame size=18 */
+  59 003a CF92      		push r12
+  60 003c DF92      		push r13
+  61 003e EF92      		push r14
+  62 0040 FF92      		push r15
+  63 0042 0F93      		push r16
+  64 0044 1F93      		push r17
+  65 0046 CF93      		push r28
+  66 0048 DF93      		push r29
+  67 004a CDB7      		in r28,__SP_L__
+  68 004c DEB7      		in r29,__SP_H__
+  69 004e 6297      		sbiw r28,18
+  70 0050 0FB6      		in __tmp_reg__,__SREG__
+  71 0052 F894      		cli
+  72 0054 DEBF      		out __SP_H__,r29
+  73 0056 0FBE      		out __SREG__,__tmp_reg__
+  74 0058 CDBF      		out __SP_L__,r28
+  75               	/* prologue end (size=16) */
+  76 005a 0E94 0000 		call WatchDogDisable
+  77 005e 84E6      		ldi r24,lo8(100)
+  78 0060 0E94 0000 		call NutDelay
+  79 0064 0E94 0000 		call SysInitIO
+  80 0068 0E94 0000 		call SPIinit
+  81 006c 0E94 0000 		call LedInit
+  82 0070 0E94 0000 		call LcdLowLevelInit
+  83 0074 0E94 0000 		call Uart0DriverInit
+  84 0078 0E94 0000 		call Uart0DriverStart
+  85 007c 0E94 0000 		call LogInit
+  86 0080 80E0      		ldi r24,lo8(__c.2570)
+  87 0082 90E0      		ldi r25,hi8(__c.2570)
+  88 0084 9F93      		push r25
+  89 0086 8F93      		push r24
+  90 0088 16EC      		ldi r17,lo8(-58)
+  91 008a 1F93      		push r17
+  92 008c 0E94 0000 		call LogMsg_P
+  93 0090 0E94 0000 		call CardInit
+  94 0094 0E94 0000 		call X12Init
+  95 0098 CE01      		movw r24,r28
+  96 009a 0196      		adiw r24,1
+  97 009c 0E94 0000 		call X12RtcGetClock
+  98 00a0 0F90      		pop __tmp_reg__
+  99 00a2 0F90      		pop __tmp_reg__
+ 100 00a4 0F90      	 	pop __tmp_reg__
+ 101 00a6 892B      		or r24,r25
+ 102 00a8 01F4      		brne .L4
+ 103 00aa 8981      		ldd r24,Y+1
+ 104 00ac 9A81      		ldd r25,Y+2
+ 105 00ae 9F93      		push r25
+ 106 00b0 8F93      		push r24
+ 107 00b2 8B81      		ldd r24,Y+3
+ 108 00b4 9C81      		ldd r25,Y+4
+ 109 00b6 9F93      		push r25
+ 110 00b8 8F93      		push r24
+GAS LISTING C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s 			page 3
+
+
+ 111 00ba 8D81      		ldd r24,Y+5
+ 112 00bc 9E81      		ldd r25,Y+6
+ 113 00be 9F93      		push r25
+ 114 00c0 8F93      		push r24
+ 115 00c2 80E0      		ldi r24,lo8(__c.2572)
+ 116 00c4 90E0      		ldi r25,hi8(__c.2572)
+ 117 00c6 9F93      		push r25
+ 118 00c8 8F93      		push r24
+ 119 00ca 1F93      		push r17
+ 120 00cc 0E94 0000 		call LogMsg_P
+ 121 00d0 8DB7      		in r24,__SP_L__
+ 122 00d2 9EB7      		in r25,__SP_H__
+ 123 00d4 0996      		adiw r24,9
+ 124 00d6 0FB6      		in __tmp_reg__,__SREG__
+ 125 00d8 F894      		cli
+ 126 00da 9EBF      		out __SP_H__,r25
+ 127 00dc 0FBE      		out __SREG__,__tmp_reg__
+ 128 00de 8DBF      		out __SP_L__,r24
+ 129               	.L4:
+ 130 00e0 0E94 0000 		call At45dbInit
+ 131 00e4 81E0      		ldi r24,lo8(1)
+ 132 00e6 0E94 0000 		call NutThreadSetPriority
+ 133 00ea 20E0      		ldi r18,lo8(512)
+ 134 00ec 32E0      		ldi r19,hi8(512)
+ 135 00ee 40E0      		ldi r20,lo8(0)
+ 136 00f0 50E0      		ldi r21,hi8(0)
+ 137 00f2 60E0      		ldi r22,lo8(gs(Blink))
+ 138 00f4 70E0      		ldi r23,hi8(gs(Blink))
+ 139 00f6 80E0      		ldi r24,lo8(.LC0)
+ 140 00f8 90E0      		ldi r25,hi8(.LC0)
+ 141 00fa 0E94 0000 		call NutThreadCreate
+ 142 00fe 20E0      		ldi r18,lo8(512)
+ 143 0100 32E0      		ldi r19,hi8(512)
+ 144 0102 40E0      		ldi r20,lo8(0)
+ 145 0104 50E0      		ldi r21,hi8(0)
+ 146 0106 60E0      		ldi r22,lo8(gs(Blink2))
+ 147 0108 70E0      		ldi r23,hi8(gs(Blink2))
+ 148 010a 80E0      		ldi r24,lo8(.LC1)
+ 149 010c 90E0      		ldi r25,hi8(.LC1)
+ 150 010e 0E94 0000 		call NutThreadCreate
+ 151 0112 0E94 0000 		call RcInit
+ 152 0116 0E94 0000 		call KbInit
+ 153 011a 40E0      		ldi r20,lo8(0)
+ 154 011c 50E0      		ldi r21,hi8(0)
+ 155 011e 60E0      		ldi r22,lo8(gs(SysMainBeatInterrupt))
+ 156 0120 70E0      		ldi r23,hi8(gs(SysMainBeatInterrupt))
+ 157 0122 80E0      		ldi r24,lo8(sig_OVERFLOW0)
+ 158 0124 90E0      		ldi r25,hi8(sig_OVERFLOW0)
+ 159 0126 0E94 0000 		call NutRegisterIrqHandler
+ 160 012a 892B      		or r24,r25
+ 161 012c 01F4      		brne .L6
+ 162 012e 85B5      		in r24,69-0x20
+ 163 0130 8460      		ori r24,lo8(4)
+ 164 0132 85BD      		out 69-0x20,r24
+ 165 0134 A89A      		sbi 53-0x20,0
+ 166 0136 8091 6E00 		lds r24,110
+ 167 013a 8160      		ori r24,lo8(1)
+GAS LISTING C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s 			page 4
+
+
+ 168 013c 8093 6E00 		sts 110,r24
+ 169               	.L6:
+ 170               	/* #APP */
+ 171 0140 7894      		sei
+ 172               	/* #NOAPP */
+ 173 0142 64E6      		ldi r22,lo8(100)
+ 174 0144 70E0      		ldi r23,hi8(100)
+ 175 0146 80E0      		ldi r24,hlo8(100)
+ 176 0148 90E0      		ldi r25,hhi8(100)
+ 177 014a 0E94 0000 		call NutSleep
+ 178 014e FF24      		clr r15
+ 179 0150 CC24      		clr r12
+ 180 0152 DD24      		clr r13
+ 181 0154 01E0      		ldi r16,lo8(1)
+ 182 0156 10E0      		ldi r17,hi8(1)
+ 183               	.L8:
+ 184 0158 1F93      		push r17
+ 185 015a 0F93      		push r16
+ 186 015c 80E0      		ldi r24,lo8(__c.2574)
+ 187 015e 90E0      		ldi r25,hi8(__c.2574)
+ 188 0160 9F93      		push r25
+ 189 0162 8F93      		push r24
+ 190 0164 96EC      		ldi r25,lo8(-58)
+ 191 0166 E92E      		mov r14,r25
+ 192 0168 EF92      		push r14
+ 193 016a 0E94 0000 		call LogMsg_P
+ 194 016e 0E94 0000 		call KbGetButtonsPressedValue
+ 195 0172 0F90      		pop __tmp_reg__
+ 196 0174 0F90      		pop __tmp_reg__
+ 197 0176 0F90      		pop __tmp_reg__
+ 198 0178 0F90      		pop __tmp_reg__
+ 199 017a 0F90      		pop __tmp_reg__
+ 200 017c 8F5F      		subi r24,lo8(-1)
+ 201 017e 9F4F      		sbci r25,hi8(-1)
+ 202 0180 01F0      		breq .L9
+ 203 0182 81E0      		ldi r24,lo8(1)
+ 204 0184 0E94 0000 		call LcdBackLight
+ 205 0188 6801      		movw r12,r16
+ 206 018a 81E0      		ldi r24,lo8(1)
+ 207 018c F82E      		mov r15,r24
+ 208 018e 00C0      		rjmp .L16
+ 209               	.L9:
+ 210 0190 FF20      		tst r15
+ 211 0192 01F0      		breq .L16
+ 212 0194 C801      		movw r24,r16
+ 213 0196 8C19      		sub r24,r12
+ 214 0198 9D09      		sbc r25,r13
+ 215 019a 4597      		sbiw r24,21
+ 216 019c 04F0      		brlt .L16
+ 217 019e 80E0      		ldi r24,lo8(__c.2576)
+ 218 01a0 90E0      		ldi r25,hi8(__c.2576)
+ 219 01a2 9F93      		push r25
+ 220 01a4 8F93      		push r24
+ 221 01a6 EF92      		push r14
+ 222 01a8 0E94 0000 		call LogMsg_P
+ 223 01ac 80E0      		ldi r24,lo8(0)
+ 224 01ae 0E94 0000 		call LcdBackLight
+GAS LISTING C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s 			page 5
+
+
+ 225 01b2 FF24      		clr r15
+ 226 01b4 0F90      		pop __tmp_reg__
+ 227 01b6 0F90      		pop __tmp_reg__
+ 228 01b8 0F90      	 	pop __tmp_reg__
+ 229               	.L16:
+ 230 01ba 0E94 0000 		call WatchDogRestart
+ 231 01be 64E6      		ldi r22,lo8(100)
+ 232 01c0 70E0      		ldi r23,hi8(100)
+ 233 01c2 80E0      		ldi r24,hlo8(100)
+ 234 01c4 90E0      		ldi r25,hhi8(100)
+ 235 01c6 0E94 0000 		call NutSleep
+ 236 01ca C801      		movw r24,r16
+ 237 01cc 6FE0      		ldi r22,lo8(15)
+ 238 01ce 70E0      		ldi r23,hi8(15)
+ 239 01d0 0E94 0000 		call __divmodhi4
+ 240 01d4 0F5F      		subi r16,lo8(-(1))
+ 241 01d6 1F4F      		sbci r17,hi8(-(1))
+ 242 01d8 892B      		or r24,r25
+ 243 01da 01F4      		brne .L16
+ 244 01dc 00C0      		rjmp .L8
+ 245               	/* epilogue: frame size=18 */
+ 246               	/* epilogue: noreturn */
+ 247               	/* epilogue end (size=0) */
+ 248               	/* function NutAppMain size 213 (197) */
+ 249               		.size	NutAppMain, .-NutAppMain
+ 250               		.type	SysMainBeatInterrupt, @function
+ 251               	SysMainBeatInterrupt:
+ 252               	/* prologue: frame size=0 */
+ 253               	/* prologue end (size=0) */
+ 254 01de 0E94 0000 		call KbScan
+ 255 01e2 0E94 0000 		call CardCheckCard
+ 256               	/* epilogue: frame size=0 */
+ 257 01e6 0895      		ret
+ 258               	/* epilogue end (size=1) */
+ 259               	/* function SysMainBeatInterrupt size 5 (4) */
+ 260               		.size	SysMainBeatInterrupt, .-SysMainBeatInterrupt
+ 261               	.global	Blink2
+ 262               		.type	Blink2, @function
+ 263               	Blink2:
+ 264               	/* prologue: frame size=0 */
+ 265               	/* prologue end (size=0) */
+ 266               	.L21:
+ 267 01e8 80E0      		ldi r24,lo8(0)
+ 268 01ea 0E94 0000 		call LedControl
+ 269 01ee 80E0      		ldi r24,lo8(__c.2513)
+ 270 01f0 90E0      		ldi r25,hi8(__c.2513)
+ 271 01f2 9F93      		push r25
+ 272 01f4 8F93      		push r24
+ 273 01f6 86EC      		ldi r24,lo8(-58)
+ 274 01f8 8F93      		push r24
+ 275 01fa 0E94 0000 		call LogMsg_P
+ 276 01fe 64E6      		ldi r22,lo8(100)
+ 277 0200 70E0      		ldi r23,hi8(100)
+ 278 0202 80E0      		ldi r24,hlo8(100)
+ 279 0204 90E0      		ldi r25,hhi8(100)
+ 280 0206 0E94 0000 		call NutSleep
+ 281 020a 0F90      		pop __tmp_reg__
+GAS LISTING C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s 			page 6
+
+
+ 282 020c 0F90      		pop __tmp_reg__
+ 283 020e 0F90      	 	pop __tmp_reg__
+ 284 0210 00C0      		rjmp .L21
+ 285               	/* epilogue: frame size=0 */
+ 286               	/* epilogue: noreturn */
+ 287               	/* epilogue end (size=0) */
+ 288               	/* function Blink2 size 21 (21) */
+ 289               		.size	Blink2, .-Blink2
+ 290               	.global	Blink
+ 291               		.type	Blink, @function
+ 292               	Blink:
+ 293               	/* prologue: frame size=0 */
+ 294               	/* prologue end (size=0) */
+ 295 0212 80E0      		ldi r24,lo8(.LC0)
+ 296 0214 90E0      		ldi r25,hi8(.LC0)
+ 297 0216 9F93      		push r25
+ 298 0218 8F93      		push r24
+ 299 021a 0E94 0000 		call printf
+ 300 021e 0F90      		pop __tmp_reg__
+ 301 0220 0F90      		pop __tmp_reg__
+ 302               	.L24:
+ 303 0222 81E0      		ldi r24,lo8(1)
+ 304 0224 0E94 0000 		call LedControl
+ 305 0228 80E0      		ldi r24,lo8(__c.2505)
+ 306 022a 90E0      		ldi r25,hi8(__c.2505)
+ 307 022c 9F93      		push r25
+ 308 022e 8F93      		push r24
+ 309 0230 86EC      		ldi r24,lo8(-58)
+ 310 0232 8F93      		push r24
+ 311 0234 0E94 0000 		call LogMsg_P
+ 312 0238 64E6      		ldi r22,lo8(100)
+ 313 023a 70E0      		ldi r23,hi8(100)
+ 314 023c 80E0      		ldi r24,hlo8(100)
+ 315 023e 90E0      		ldi r25,hhi8(100)
+ 316 0240 0E94 0000 		call NutSleep
+ 317 0244 0F90      		pop __tmp_reg__
+ 318 0246 0F90      		pop __tmp_reg__
+ 319 0248 0F90      	 	pop __tmp_reg__
+ 320 024a 00C0      		rjmp .L24
+ 321               	/* epilogue: frame size=0 */
+ 322               	/* epilogue: noreturn */
+ 323               	/* epilogue end (size=0) */
+ 324               	/* function Blink size 29 (29) */
+ 325               		.size	Blink, .-Blink
+ 326               		.section	.progmem.data,"a",@progbits
+ 327               		.type	__c.2576, @object
+ 328               		.size	__c.2576, 44
+ 329               	__c.2576:
+ 330 0000 4E4F 2062 		.string	"NO button pressed! Turning off the light..."
+ 330      7574 746F 
+ 330      6E20 7072 
+ 330      6573 7365 
+ 330      6421 2054 
+ 331               		.type	__c.2574, @object
+ 332               		.size	__c.2574, 10
+ 333               	__c.2574:
+ 334 002c 4C6F 6F70 		.string	"Looplogic"
+GAS LISTING C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s 			page 7
+
+
+ 334      6C6F 6769 
+ 334      6300 
+ 335               		.type	__c.2572, @object
+ 336               		.size	__c.2572, 26
+ 337               	__c.2572:
+ 338 0036 5254 4320 		.string	"RTC time [%02d:%02d:%02d]"
+ 338      7469 6D65 
+ 338      205B 2530 
+ 338      3264 3A25 
+ 338      3032 643A 
+ 339               		.type	__c.2570, @object
+ 340               		.size	__c.2570, 12
+ 341               	__c.2570:
+ 342 0050 4865 6C6C 		.string	"Hello World"
+ 342      6F20 576F 
+ 342      726C 6400 
+ 343               		.type	__c.2513, @object
+ 344               		.size	__c.2513, 11
+ 345               	__c.2513:
+ 346 005c 4C41 4D50 		.string	"LAMPJE UIT"
+ 346      4A45 2055 
+ 346      4954 00
+ 347               		.type	__c.2505, @object
+ 348               		.size	__c.2505, 11
+ 349               	__c.2505:
+ 350 0067 4C41 4D50 		.string	"LAMPJE AAN"
+ 350      4A45 2041 
+ 350      414E 00
+ 351               	/* File "source/main.c": code  297 = 0x0129 ( 279), prologues  16, epilogues   2 */
+GAS LISTING C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s 			page 8
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:3      *ABS*:0000003f __SREG__
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:4      *ABS*:0000003e __SP_H__
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:5      *ABS*:0000003d __SP_L__
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:13     .text:00000000 SysInitIO
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:57     .text:0000003a NutAppMain
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:341    .progmem.data:00000050 __c.2570
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:337    .progmem.data:00000036 __c.2572
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:292    .text:00000212 Blink
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:263    .text:000001e8 Blink2
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:251    .text:000001de SysMainBeatInterrupt
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:333    .progmem.data:0000002c __c.2574
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:329    .progmem.data:00000000 __c.2576
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:345    .progmem.data:0000005c __c.2513
+C:\Users\KAYVAN~1\AppData\Local\Temp/ccCvLL9e.s:349    .progmem.data:00000067 __c.2505
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+WatchDogDisable
+NutDelay
+SPIinit
+LedInit
+LcdLowLevelInit
+Uart0DriverInit
+Uart0DriverStart
+LogInit
+LogMsg_P
+CardInit
+X12Init
+X12RtcGetClock
+At45dbInit
+NutThreadSetPriority
+NutThreadCreate
+RcInit
+KbInit
+sig_OVERFLOW0
+NutRegisterIrqHandler
+NutSleep
+KbGetButtonsPressedValue
+LcdBackLight
+WatchDogRestart
+__divmodhi4
+KbScan
+CardCheckCard
+LedControl
+printf
