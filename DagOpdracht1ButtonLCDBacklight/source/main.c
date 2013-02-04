@@ -103,22 +103,50 @@ static void SysMainBeatInterrupt(void *p)
 
 THREAD(Blink, arg)
 {   
-    printf("Blinking");
+    
     for (;;) {
         LedControl(LED_ON);
-        LogMsg_P(LOG_INFO, PSTR("LAMPJE AAN"));
-        NutSleep(100);
+        LogMsg_P(LOG_INFO, PSTR("LED on"));
+        NutSleep(1000);
+        printf("Blinking");
     }
 }
 THREAD(Blink2, arg)
 {         
     for (;;) {
         LedControl(LED_OFF);
-        LogMsg_P(LOG_INFO, PSTR("LAMPJE UIT"));
-        NutSleep(100);
+        LogMsg_P(LOG_INFO, PSTR("LED off"));
+        NutSleep(1000);
     }
-}   
+}  
+THREAD(Buttons, arg)
+{       
+       int t = 0;
+       bool bLCDOn = false;
+       int iLastButtonPress = 0;
 
+    for (;;) {
+        NutSleep(10);
+        
+           if( !((t++)%15) )
+		{
+                    
+                    if((KbGetButtonsPressedValue() ^ 0xFFFF) != 0)
+                    {
+                        
+                        LcdBackLight(LCD_BACKLIGHT_ON);
+                        iLastButtonPress = t;
+                        bLCDOn = true;
+                    }
+                    else if(bLCDOn && t - iLastButtonPress > 250)
+                    {
+                        LcdBackLight(LCD_BACKLIGHT_OFF);
+                        bLCDOn = false;
+                    }
+		}
+           
+    }
+}
 
 /* ����������������������������������������������������������������������� */
 /*!
@@ -223,16 +251,7 @@ static void SysControlMainBeat(u_char OnOff)
  */
 /* ����������������������������������������������������������������������� */
 int main(void)
-{
-    	int t = 0;
-        
-        // Added by JTI2.3A4
-        bool bLCDOn = false;
-        int iLastButtonPress = 0;
-       
-	
-
-        	
+{             	
 	/* 
 	 * Kroeske: time struct uit nut/os time.h (http://www.ethernut.de/api/time_8h-source.html)
 	 *
@@ -277,12 +296,14 @@ int main(void)
     {
         // ......
     }
+       
     
-    NutThreadSetPriority(1);
     NutThreadCreate("Blinking", Blink, NULL, 512);
     NutThreadCreate("Blinking2", Blink2, NULL, 512);
+    NutThreadCreate("Buttons", Buttons, NULL, 512);
 
-
+    
+    
     RcInit();
     
 	KbInit();
@@ -300,27 +321,6 @@ int main(void)
         for (;;)
     {
         NutSleep(100);
-    		if( !((t++)%15) )
-		{
-                    // Content of outer if-block added by JTI2.3A4
-                    LogMsg_P(LOG_INFO, PSTR("Looplogic"), t);
-                    
-                    if((KbGetButtonsPressedValue() ^ 0xFFFF) != 0)
-                    {
-                        
-                        LcdBackLight(LCD_BACKLIGHT_ON);
-                        iLastButtonPress = t;
-                        bLCDOn = true;
-                    }
-                    else if(bLCDOn && t - iLastButtonPress > 20)
-                    {
-                        LogMsg_P(LOG_INFO, PSTR("NO button pressed! Turning off the light..."));
-                        LcdBackLight(LCD_BACKLIGHT_OFF);
-                        bLCDOn = false;
-                    }
-		}
-		
-
         WatchDogRestart();
     }
     
