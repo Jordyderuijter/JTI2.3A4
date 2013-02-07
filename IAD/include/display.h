@@ -7,8 +7,10 @@
  * [CREATED]    030414
  * [LASTCHNGD]  030414
  * [COPYRIGHT]  Copyright (C) STREAMIT BV 2010
- * [PURPOSE]    API and gobal defines for display module
+ * [PURPOSE]    API and global defines for display module
  * ======================================================================== */
+
+#include <time.h>       // For tm struct
 
 #ifndef _Display_H
 #define _Display_H
@@ -54,8 +56,13 @@ extern void LcdBackLight(u_char);
 extern void LcdInit(void);
 extern void LcdLowLevelInit(void);
 
+extern void lcd_clear(void);
+extern void lcd_display_string(char*);
+extern int lcd_display_string_at(char*, int, int);
+extern void lcd_display_timestamp(tm *tm);
+
 #endif /* _Display_H */
-/*  ออออ  End Of File  ออออออออ ออออออออออออออออออออออออออออออออออออออออออออ */
+/*  ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ  End Of File  ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ๏ฟฝ */
 
 
 

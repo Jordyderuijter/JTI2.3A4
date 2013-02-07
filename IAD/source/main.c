@@ -241,10 +241,10 @@ int main(void)
     Uart0DriverInit();
     Uart0DriverStart();
 	LogInit();
-	LogMsg_P(LOG_INFO, PSTR("Hello World"));
+	LogMsg_P(LOG_INFO, PSTR("Application now running"));
 
     CardInit();
-
+    
 	/*
 	 * Kroeske: sources in rtc.c en rtc.h
 	 */
@@ -275,13 +275,18 @@ int main(void)
 	/* Enable global interrupts */
 	sei();
 	
+    LcdBackLight(LCD_BACKLIGHT_ON);
+    
     for (;;)
     {
         NutSleep(100);
-		if( !((t++)%15) )
-		{
-                    // Content of outer if-block added by JTI2.3A4
-                    LogMsg_P(LOG_INFO, PSTR("Looplogic"), t);
+		if( !((t++)%10) )
+		{                    
+                    lcd_clear();
+                    
+                    X12RtcGetClock(&gmt);
+                    lcd_display_timestamp(&gmt);
+                    
                     
                     if((KbGetButtonsPressedValue() ^ 0xFFFF) != 0)
                     {

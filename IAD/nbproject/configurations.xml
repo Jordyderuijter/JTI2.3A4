@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurationDescriptor version="84">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
-    <df name="DagOpdracht1ButtonLCDBacklight" root=".">
+    <df name="IAD" root=".">
       <df name="include">
         <in>display.h</in>
         <in>fat.h</in>
