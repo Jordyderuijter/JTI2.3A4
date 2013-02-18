@@ -223,24 +223,32 @@ static void LcdWaitBusy()
  */
 void lcd_clear()
 {
-    LcdWriteByte(WRITE_COMMAND, 0x01);          // display clear
+    LcdWriteByte(WRITE_COMMAND, 0x01);          // Display clear command.
     NutDelay(2);
 
-    LcdWriteByte(WRITE_COMMAND, 0x80);          // DD-RAM address counter (cursor pos) to '0'
+    lcd_cursor_home();
+}
+
+/*
+ * Sets the cursor position to [0][0] (top left, first position)
+ */
+void lcd_cursor_home()
+{
+    LcdWriteByte(WRITE_COMMAND, 0x02);          // Set cursor to home command.
 }
 
 /**
  * Displays the given timestamp in format hh:mm:ss on the display, starting at [0][0]
  * @param tm The timestamp to display on the LCD display
  */
-void lcd_display_timestamp(struct _tm *tm)
+void lcd_display_timestamp(struct _tm* tm)
 {    
     char string[] = {    '0' + (tm->tm_hour / 10), '0' + (tm->tm_hour % 10), ':',
-                        '0' + (tm->tm_min / 10), '0' + (tm->tm_min % 10), ':',
-    
+                        '0' + (tm->tm_min / 10), '0' + (tm->tm_min % 10),
+
                         //'0' + (tm->tm_sec / 10), '0' + (tm->tm_sec % 10),
                         ' ', ' ',
-    
+
                         '0' + (tm->tm_mday / 10), '0' + (tm->tm_mday % 10), '-',
                         '0' + (tm->tm_mon / 10), '0' + (tm->tm_mon % 10), '-',
                         '0' + ((tm->tm_year % 100) / 10) - 1, '0' + (tm->tm_year % 10), '\0'};
@@ -268,11 +276,11 @@ int lcd_display_string_at(char* string, int x, int y)
     if(x < 0 || x > 15 || y < 0 || y > 1)
         return -1;
     
-    // TODO: Set cursor to position here!!!
-    LcdWriteByte(WRITE_COMMAND, 0x80 + x + y * 16);          // DD-RAM address counter (cursor pos) to '0'
+    // TODO: TEST CURSOR POSITION
+    LcdWriteByte(WRITE_COMMAND, 0x80 + x + y * 16);          // DD-RAM address counter (cursor pos) to the requested position.
     
     int i;
-    for(i = 0; (string[i] != '\0') && (i < 16 - x); i++)
+    for(i = 0; (string[i] != '\0') && (i < 16 - x); i++)        // Loop through the string and display each character individually.
         LcdChar(string[i]);
     
     return 0;

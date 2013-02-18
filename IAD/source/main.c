@@ -282,13 +282,13 @@ int main(void)
         NutSleep(100);
 		if( !((t++)%10) )
 		{                    
-                    lcd_clear();
+                    lcd_cursor_home();
                     
                     X12RtcGetClock(&gmt);
                     lcd_display_timestamp(&gmt);
                     
                     
-                    if((KbGetButtonsPressedValue() ^ 0xFFFF) != 0)
+                    if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
                     {
                         LogMsg_P(LOG_INFO, PSTR("Button pressed! Turning on the light..."));
                         

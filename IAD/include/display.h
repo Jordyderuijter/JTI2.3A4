@@ -57,6 +57,7 @@ extern void LcdInit(void);
 extern void LcdLowLevelInit(void);
 
 extern void lcd_clear(void);
+extern void lcd_cursor_home(void);
 extern void lcd_display_string(char*);
 extern int lcd_display_string_at(char*, int, int);
 extern void lcd_display_timestamp(tm *tm);

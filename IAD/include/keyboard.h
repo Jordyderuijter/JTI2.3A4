@@ -96,7 +96,8 @@ u_char  KbGetKey(void);
 void    KbSetKeyRepeating(u_char, u_char);
 void    KbInjectKey(u_char VirtualKey);
 
-short KbGetButtonsPressedValue(void);   // Added by JTI2.3A4
+extern short kb_get_buttons_pressed_raw(void);
+extern bool kb_is_pressed();
 
 /*  ����  End Of File  �������� �������������������������������������������� */
 

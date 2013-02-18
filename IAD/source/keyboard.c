@@ -322,8 +322,10 @@ void KbInit()
     KbSetKeyRepeating(KEY_RIGHT, KEY_REPEAT);
 }
 
-// Returns a value of at least 16 bits that contains the values of the 13 buttons (default = 1, pressed = 0, values start at lowest bit).
-short KbGetButtonsPressedValue(void)   // Added by JTI2.3A4
+/*
+ * Returns a value of at least 16 bits that contains the values of the 13 buttons (default = 1, pressed = 0, values start at lowest bit).
+ */
+short kb_get_buttons_pressed_raw()
 {
     return KeyFound;
 }
