@@ -10,6 +10,8 @@
  * [PURPOSE]    Keyboard routines
  * ======================================================================== */
 
+#include <stdbool.h>
+
 /*-------------------------------------------------------------------------*/
 /* global defines                                                          */
 /*-------------------------------------------------------------------------*/
@@ -97,7 +99,7 @@ void    KbSetKeyRepeating(u_char, u_char);
 void    KbInjectKey(u_char VirtualKey);
 
 extern short kb_get_buttons_pressed_raw(void);
-extern bool kb_is_pressed();
+extern bool kb_button_is_pressed(int);
 
 /*  ����  End Of File  �������� �������������������������������������������� */
 

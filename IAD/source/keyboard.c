@@ -329,6 +329,18 @@ short kb_get_buttons_pressed_raw()
 {
     return KeyFound;
 }
+
+bool kb_is_pressed(int key)
+{
+    u_short key_pressed = KeyFound | key;
+    
+    if(KbRemapKey(key_pressed) == key)
+        return true;
+    //if(key_pressed != 0xFFFF) 
+        //return true;
+    
+    return false;
+}
 /* ---------- end of module ------------------------------------------------ */
 
 /*@}*/
