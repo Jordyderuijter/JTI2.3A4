@@ -10,6 +10,7 @@
         <in>keyboard.h</in>
         <in>led.h</in>
         <in>log.h</in>
+        <in>menu.h</in>
         <in>mmc.h</in>
         <in>mmcdrv.h</in>
         <in>platform.h</in>
@@ -33,6 +34,7 @@
         <in>led.c</in>
         <in>log.c</in>
         <in>main.c</in>
+        <in>menu.c</in>
         <in>mmc.c</in>
         <in>mmcdrv.c</in>
         <in>remcon.c</in>
