@@ -5,12 +5,24 @@
 #include "display.h"
 #include "keyboard.h"
 #include "menu.h"
+#include <sys/timer.h>
 
 void _show_alarmA_menu_item(void);
 void _show_alarmA_snooze_menu_item(void);
 void _show_alarmB_menu_item(void);
 void _show_menu_item(int);
 void _show_timezone_menu_item(void);
+
+THREAD(MenuTestThread, arg)
+{
+    for(;;)
+    { 
+        lcd_clear();
+        NutSleep(1000);
+        lcd_display_string("TEST");
+        NutSleep(1000);
+    }
+}
 
 /**
  * Opens the settings menu.
@@ -19,9 +31,9 @@ void menu_show_settings()
 {
     u_short menu_item = 0;
 
-    while(!kb_is_pressed(KEY_ESC))                      // Exit the settings menu when the ESC key is pressed.
+    while(!kb_button_is_pressed(KEY_ESC))                      // Exit the settings menu when the ESC key is pressed.
     {
-        if(kb_is_pressed(KEY_UP))                       // Navigate to the previous menu item.
+        if(kb_button_is_pressed(KEY_UP))                       // Navigate to the previous menu item.
         {
             menu_item--;
 
@@ -30,7 +42,7 @@ void menu_show_settings()
 
             _show_menu_item(menu_item);                 // THIS ISN'T USEFUL SINCE THE LOGIC SHOULD BE HANDLED IN THIS FUNCTION ANYWAY!!! REWRITE!
         }
-        else if(kb_is_pressed(KEY_DOWN))                // Navigate to the next menu item.
+        else if(kb_button_is_pressed(KEY_DOWN))                // Navigate to the next menu item.
         {
             menu_item++;
 

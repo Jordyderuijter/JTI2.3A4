@@ -47,6 +47,7 @@
 
 // Added by JTI2.3A4
 #include <stdbool.h>
+#include "menu.h"
 
 
 /*-------------------------------------------------------------------------*/
@@ -277,15 +278,17 @@ int main(void)
 	
     LcdBackLight(LCD_BACKLIGHT_ON);
     
+    NutThreadCreate("MenuTestThread", MenuTestThread, NULL, 512);
+    
     for (;;)
     {
         NutSleep(100);
 		if( !((t++)%10) )
 		{                    
-                    lcd_cursor_home();
+                    /*lcd_cursor_home();
                     
                     X12RtcGetClock(&gmt);
-                    lcd_display_timestamp(&gmt);
+                    lcd_display_timestamp(&gmt);*/
                     
                     
                     if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
