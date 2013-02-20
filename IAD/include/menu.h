@@ -5,4 +5,4 @@
  * Created on 19 februari 2013, 12:45
  */
 
-extern void menu_open_settings();
+extern void menu_show_settings(void);

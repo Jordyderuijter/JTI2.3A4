@@ -336,8 +336,6 @@ bool kb_is_pressed(int key)
     
     if(KbRemapKey(key_pressed) == key)
         return true;
-    //if(key_pressed != 0xFFFF) 
-        //return true;
     
     return false;
 }

@@ -277,10 +277,9 @@ int lcd_display_string_at(char* string, int x, int y)
         return -1;
     
     // TODO: TEST CURSOR POSITION
-    LcdWriteByte(WRITE_COMMAND, 0x80 + x + y * 16);          // DD-RAM address counter (cursor pos) to the requested position.
-    
+    LcdWriteByte(WRITE_COMMAND, 0x80 + (y * 64) + x );          // DD-RAM address counter (cursor pos) to the requested position.
     int i;
-    for(i = 0; (string[i] != '\0') && (i < 16 - x); i++)        // Loop through the string and display each character individually.
+    for(i = 0; (string[i] != '\0') && (i < 16 -x); i++)        // Loop through the string and display each character individually.
         LcdChar(string[i]);
     
     return 0;
