@@ -26,6 +26,9 @@
 #include "portio.h"
 #include "display.h"
 #include "log.h"
+#include "menu.h"
+#include <stdbool.h>
+#include "rtc.h"
 
 /*-------------------------------------------------------------------------*/
 /* local defines                                                           */
@@ -33,7 +36,8 @@
 /*-------------------------------------------------------------------------*/
 /* local variable definitions                                              */
 /*-------------------------------------------------------------------------*/
-
+static int display_mode = 0;                // The current display mode. 0=Main, 1=Settings menu, 2=timezone setup
+static int lcd_backlight_time = 0;          // Used for temporarily lighting up the display. (time in ~500ms/half seconds)
 
 /*-------------------------------------------------------------------------*/
 /* local routines (prototyping)                                            */
@@ -41,6 +45,9 @@
 static void LcdWriteByte(u_char, u_char);
 static void LcdWriteNibble(u_char, u_char);
 static void LcdWaitBusy(void);
+
+void _display_main_screen(void);
+void _display_timezone_setup(void);
 
 /*!
  * \addtogroup Display
@@ -283,6 +290,96 @@ int lcd_display_string_at(char* string, int x, int y)
         LcdChar(string[i]);
     
     return 0;
+}
+
+/**
+ * Temporarily light up the display.
+ * @param time  time in ~500ms/half seconds
+ */
+void lcd_backlight_on(int time)
+{
+    if(time > 0)
+    {
+        LcdBackLight(LCD_BACKLIGHT_ON);
+        lcd_backlight_time = time;
+    }
+}
+
+void lcd_display_main_screen()
+{
+    display_mode = 0;
+}
+
+/**
+ * Changes 'displaymode' to display the settings menu.
+ */
+void lcd_display_settings_menu()
+{
+    display_mode = 1;
+}
+
+/**
+ * Starting point of the thread that handles everything on the LCD screen.
+ * @param arg
+ */
+THREAD(DisplayThread, arg)
+{
+    tm time_stamp;
+    
+    for(;;)
+    {
+        // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
+        lcd_cursor_home();     // Can probably be removed, first needs testing though!
+        X12RtcGetClock(&time_stamp);
+        lcd_display_timestamp(&time_stamp);
+        
+        // Turn off the backlight if it was temporarily enabled.
+        if(lcd_backlight_time == 0)
+            LcdBackLight(LCD_BACKLIGHT_OFF);
+        else
+            lcd_backlight_time--;   // Decrease the backlight 'timer'.
+        
+        // Display the 'variable' information at each update, based on the value of display_mode.
+        switch(display_mode)
+        {
+            case 0:
+                _display_main_screen();
+                break;
+            case 1:
+                menu_show_settings();
+                break;
+            case 2:
+                _display_timezone_setup();
+                break;
+        }
+        
+        NutSleep(500);
+    }
+}
+
+/**
+ * Shows the main screen (radio/rss information)
+ */
+void _display_main_screen()
+{
+    display_mode = 0;
+    // Display radio/RSS info here.
+}
+
+/**
+ * Shows the timezone setup screen.
+ */
+void lcd_display_timezone_setup()
+{
+    display_mode = 2;
+}
+
+/**
+ * Shows the timezone setup.
+ */
+void _display_timezone_setup()
+{
+    lcd_display_string("Timezone:");
 }
 
 /* ---------- end of module ------------------------------------------------ */

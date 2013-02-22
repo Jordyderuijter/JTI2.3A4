@@ -1,66 +1,26 @@
 /**
- * Module that handles the displaying, navigation and behavior of the used menus.
+ * Module that handles the displaying the menus.
  */
 
 #include "display.h"
-#include "keyboard.h"
 #include "menu.h"
-#include <sys/timer.h>
 
+#define MAX_MENU_ITEM_INDEX 2           // Zero-based index
+
+// 'LOCAL VARIABLE DEFINITIONS'
+u_short menu_item = 0;          // Menu item to display. See documentation of _show_menu_item for more information.
+
+// PROTOTYPES
 void _show_alarmA_menu_item(void);
 void _show_alarmA_snooze_menu_item(void);
 void _show_alarmB_menu_item(void);
-void _show_menu_item(int);
-void _show_timezone_menu_item(void);
-
-THREAD(MenuTestThread, arg)
-{
-    for(;;)
-    { 
-        lcd_clear();
-        NutSleep(1000);
-        lcd_display_string("TEST");
-        NutSleep(1000);
-    }
-}
-
-/**
- * Opens the settings menu.
- */
-void menu_show_settings()
-{
-    u_short menu_item = 0;
-
-    while(!kb_button_is_pressed(KEY_ESC))                      // Exit the settings menu when the ESC key is pressed.
-    {
-        if(kb_button_is_pressed(KEY_UP))                       // Navigate to the previous menu item.
-        {
-            menu_item--;
-
-            if(menu_item == 0)
-                menu_item = 3;
-
-            _show_menu_item(menu_item);                 // THIS ISN'T USEFUL SINCE THE LOGIC SHOULD BE HANDLED IN THIS FUNCTION ANYWAY!!! REWRITE!
-        }
-        else if(kb_button_is_pressed(KEY_DOWN))                // Navigate to the next menu item.
-        {
-            menu_item++;
-
-            if(menu_item == 4)
-                menu_item = 0;
-
-            _show_menu_item(menu_item);
-        }
-    }
-}
 
 /**
  * Show the settings item for the time of alarm A.
  */
 void _show_alarmA_menu_item()
 {
-    //lcd_display_information("A:");
-    lcd_display_string_at("A", 1, 2);
+    lcd_display_string("A:");
 }
 
 /**
@@ -68,8 +28,7 @@ void _show_alarmA_menu_item()
  */
 void _show_alarmA_snooze_menu_item()
 {
-    //lcd_display_information("Snooze:");
-    lcd_display_string_at("Snooze", 1, 2);
+    lcd_display_string("Snooze:");
 }
 
 /**
@@ -77,38 +36,55 @@ void _show_alarmA_snooze_menu_item()
  */
 void _show_alarmB_menu_item()
 {
-    //lcd_display_information("B:");
-    lcd_display_string_at("B", 1, 2);
+    lcd_display_string("B:");
 }
 
 /**
- * Shows the menu item mapped to the given value.
- * @param menu_item 0: alarm A time setting\n1: alarm A snooze setting\n2: alarm B date/time setting\n3: timezone setting
+ * Opens the settings menu.
  */
-void _show_menu_item(int menu_item)
+void menu_show_settings()
 {
     switch(menu_item)
     {
-        case 0:
+        case 0:                                 // Show alarm A time setting.
             _show_alarmA_menu_item();
             break;
-        case 1:
+        case 1:                                 // Show alarm A snooze setting.
             _show_alarmA_snooze_menu_item();
             break;
-        case 2:
+        case 2:                                 // Show alarm B date + time setting.
             _show_alarmB_menu_item();
-            break;
-        case 3:
-            _show_timezone_menu_item();
             break;
     }
 }
 
 /**
- * Show the settings item for the timezone.
+ * Show the next menu item.
  */
-void _show_timezone_menu_item()
+void menu_settings_next_item()
 {
-    //lcd_display_information("Timezone:");
-    lcd_display_string_at("Timezone", 1, 2);
+    menu_item++;
+    
+    if(menu_item > MAX_MENU_ITEM_INDEX)
+        menu_item = 0;
+}
+
+/**
+ * Show the previous menu item.
+ */
+void menu_settings_previous_item()
+{
+    menu_item--;
+    
+    if(menu_item < 0)
+        menu_item = MAX_MENU_ITEM_INDEX;
+}
+
+/**
+ * Returns the index of the currently displayed menu item.
+ * @return Index of the currently displayed menu item.
+ */
+u_short menu_get_current_menu_item()
+{
+    return menu_item;
 }

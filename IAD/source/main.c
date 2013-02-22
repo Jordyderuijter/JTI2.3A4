@@ -13,9 +13,6 @@
  *  \date 19 december 2003
  */
  
- 
- 
-
 #define LOG_MODULE  LOG_MAIN_MODULE
 
 /*--------------------------------------------------------------------------*/
@@ -44,10 +41,10 @@
 
 #include <time.h>
 #include "rtc.h"
+#include "menu.h"
 
 // Added by JTI2.3A4
 #include <stdbool.h>
-#include "menu.h"
 
 
 /*-------------------------------------------------------------------------*/
@@ -64,6 +61,10 @@
 /*-------------------------------------------------------------------------*/
 static void SysMainBeatInterrupt(void*);
 static void SysControlMainBeat(u_char);
+
+void _main_init(void);
+void _use_timezone_setup_mode(void);
+void _use_settings_menu_mode(void);
 
 /*-------------------------------------------------------------------------*/
 /* Stack check variables placed in .noinit section                         */
@@ -198,9 +199,9 @@ static void SysControlMainBeat(u_char OnOff)
 /*!
  * \brief Main entry of the SIR firmware
  *
- * All the initialisations before entering the for(;;) loop are done BEFORE
+ * All the initializations before entering the for(;;) loop are done BEFORE
  * the first key is ever pressed. So when entering the Setup (POWER + VOLMIN) some
- * initialisatons need to be done again when leaving the Setup because new values
+ * initializations need to be done again when leaving the Setup because new values
  * might be current now
  *
  * \return \b never returns
@@ -208,22 +209,97 @@ static void SysControlMainBeat(u_char OnOff)
 /* ����������������������������������������������������������������������� */
 int main(void)
 {
-	int t = 0;
-        
-        // Added by JTI2.3A4
-        bool bLCDOn = false;
-        int iLastButtonPress = 0;
-        
+    _main_init();
 	
-	/* 
-	 * Kroeske: time struct uit nut/os time.h (http://www.ethernut.de/api/time_8h-source.html)
-	 *
-	 */
-	tm gmt;
-	/*
-	 * Kroeske: Ook kan 'struct _tm gmt' Zie bovenstaande link
-	 */
-	
+    for (;;)
+    {
+        // If a key is pressed, light up the LCD screen.
+        if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
+            lcd_backlight_on(6);
+
+        // Handle input on 'main screen'
+        if(kb_button_is_pressed(KEY_ESC) && kb_button_is_pressed(KEY_POWER))
+        {
+            //lcd_display_timezone_setup();
+            _use_timezone_setup_mode();       // Pass control to a 'substitute' main loop.
+        }
+        else if(kb_button_is_pressed(KEY_OK))
+        {
+            lcd_display_settings_menu();
+            _use_settings_menu_mode();       // Pass control to a 'substitute' main loop.
+        }
+        //else if(kb_button_is_pressed(KEY_UP))
+            //Display previous information item here.
+        //else if(kb_button_is_pressed(KEY_DOWN))
+            // Display next information item here.
+        
+        // Mandatory main loop code.
+        WatchDogRestart();
+        NutSleep(100); 
+    }
+
+    return(0);      // never reached, but 'main()' returns a non-void, so.....
+}
+
+/**
+ * Switches to 'timezone setup mode' in which the input to control the timezone setup is handled. Should ONLY be used AFTER activating the timezone_setup display mode!
+ */
+void _use_timezone_setup_mode()
+{
+    while(!kb_button_is_pressed(KEY_OK))
+    {
+        // If a key is pressed, light up the LCD screen.
+        if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
+        {
+            lcd_backlight_on(6);
+        }
+        
+        // Handle input here.
+        
+        // Mandatory 'main' loop code.
+        WatchDogRestart();
+        NutSleep(100);
+    }
+}
+
+/**
+ * Switches to 'settings mode' in which the input is handled to control the settings menu. Should ONLY be used AFTER activating the menu_settings display mode!
+ */
+void _use_settings_menu_mode()
+{
+    // Exit the settings menu input mode when ESC is pressed
+    while(!kb_button_is_pressed(KEY_ESC))
+    {
+        // If a key is pressed, light up the LCD screen.
+        if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
+        {
+            lcd_backlight_on(6);
+        }
+        
+        // Handle settings menu input
+        if(kb_button_is_pressed(KEY_UP))
+            menu_settings_previous_item();
+        else if(kb_button_is_pressed(KEY_DOWN))
+            menu_settings_next_item();
+        //else if(menu_get_current_menu_item() == 0 && kb_button_is_pressed(KEY_01))         // This can probably be done more efficient.
+        // Change value of alarm A time.
+            
+        // Mandatory 'main' loop code.
+        WatchDogRestart();
+        NutSleep(100);
+    }
+    
+    // Exit the settings menu when ESC is pressed
+    lcd_display_main_screen();
+}
+
+/**
+ * Do all initializations that were previously done in the main function itself.
+ */
+void _main_init()
+{
+    tm gmt;     // Used to LOG the time.
+    
     /*
      *  First disable the watchdog
      */
@@ -232,85 +308,34 @@ int main(void)
     NutDelay(100);
 
     SysInitIO();
-	
-	SPIinit();
-    
-	LedInit();
-	
-	LcdLowLevelInit();
-
+    SPIinit();
+    LedInit();
+    LcdLowLevelInit();
     Uart0DriverInit();
     Uart0DriverStart();
-	LogInit();
-	LogMsg_P(LOG_INFO, PSTR("Application now running"));
-
+    LogInit();
+    LogMsg_P(LOG_INFO, PSTR("Application now running"));
     CardInit();
-    
-	/*
-	 * Kroeske: sources in rtc.c en rtc.h
-	 */
     X12Init();
     if (X12RtcGetClock(&gmt) == 0)
     {
 		LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
     }
-
-
-    if (At45dbInit()==AT45DB041B)
-    {
-        // ......
-    }
-
-
+    At45dbInit();
     RcInit();
-    
-	KbInit();
-
-    SysControlMainBeat(ON);             // enable 4.4 msecs hartbeat interrupt
+    KbInit();
+    SysControlMainBeat(ON);             // enable 4.4 msecs heartbeat interrupt
 
     /*
      * Increase our priority so we can feed the watchdog.
      */
     NutThreadSetPriority(1);
 
-	/* Enable global interrupts */
-	sei();
-	
-    LcdBackLight(LCD_BACKLIGHT_ON);
+    /* Enable global interrupts */
+    sei();
     
-    NutThreadCreate("MenuTestThread", MenuTestThread, NULL, 512);
-    
-    for (;;)
-    {
-        NutSleep(100);
-		if( !((t++)%10) )
-		{                    
-                    /*lcd_cursor_home();
-                    
-                    X12RtcGetClock(&gmt);
-                    lcd_display_timestamp(&gmt);*/
-                    
-                    
-                    if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
-                    {
-                        LogMsg_P(LOG_INFO, PSTR("Button pressed! Turning on the light..."));
-                        
-                        LcdBackLight(LCD_BACKLIGHT_ON);
-                        iLastButtonPress = t;
-                        bLCDOn = true;
-                    }
-                    else if(bLCDOn && t - iLastButtonPress > 20)
-                    {
-                        LogMsg_P(LOG_INFO, PSTR("NO button pressed! Turning off the light..."));
-                        LcdBackLight(LCD_BACKLIGHT_OFF);
-                        bLCDOn = false;
-                    }
-		}
-		
-        WatchDogRestart();
-    }
-
-    return(0);      // never reached, but 'main()' returns a non-void, so.....
+    NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
+    // NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
 }
 /* ---------- end of module ------------------------------------------------ */
 
