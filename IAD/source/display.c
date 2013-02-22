@@ -305,8 +305,12 @@ void lcd_backlight_on(int time)
     }
 }
 
+/**
+ * Changes 'displaymode' to display the 'main screen'.
+ */
 void lcd_display_main_screen()
 {
+    lcd_clear();
     display_mode = 0;
 }
 
@@ -315,7 +319,11 @@ void lcd_display_main_screen()
  */
 void lcd_display_settings_menu()
 {
+    lcd_clear();
     display_mode = 1;
+    // Enable cursor blinking
+    LcdWriteByte(WRITE_COMMAND, 0x0E);  // 0E: underline cursor. Or: 0F for block cursor
+    // Don't forget to turn cursor blinking off when whiching display mode!
 }
 
 /**
@@ -371,6 +379,7 @@ void _display_main_screen()
  */
 void lcd_display_timezone_setup()
 {
+    lcd_clear();
     display_mode = 2;
 }
 
@@ -379,7 +388,7 @@ void lcd_display_timezone_setup()
  */
 void _display_timezone_setup()
 {
-    lcd_display_string("Timezone:");
+    lcd_display_string("Timezone: ");
 }
 
 /* ---------- end of module ------------------------------------------------ */

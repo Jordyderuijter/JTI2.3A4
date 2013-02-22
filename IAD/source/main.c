@@ -246,15 +246,28 @@ int main(void)
  */
 void _use_timezone_setup_mode()
 {
+    u_short utc_offset = 0;
+    
     while(!kb_button_is_pressed(KEY_OK))
     {
         // If a key is pressed, light up the LCD screen.
         if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
-        {
             lcd_backlight_on(6);
-        }
         
         // Handle input here.
+        /*if(kb_button_is_pressed(KEY_01))
+            utc_offset = 1;
+        else if(kb_button_is_pressed(KEY_02))
+                utc_offset = 2;
+        else if(kb_button_is_pressed(KEY_03))
+            utc_offset = 3;
+         else if(kb_button_is_pressed(KEY_04))           // NOTE: This if/else block won't work, numbers need to be set for each seperate digit!
+            utc_offset = 4;
+        else if(kb_button_is_pressed(KEY_05))
+            utc_offset = 5;
+        
+        if(kb_button_is_pressed(KEY_ALT))
+            utc_offset += 5;*/
         
         // Mandatory 'main' loop code.
         WatchDogRestart();

@@ -330,6 +330,11 @@ short kb_get_buttons_pressed_raw()
     return KeyFound;
 }
 
+/**
+ * Checks if the given key was pressed.
+ * @param key Defined KEY_ value (from keyboard.h) of the key that needs to be checked.
+ * @return True if the button was pressed, false if it was not.
+ */
 bool kb_button_is_pressed(int key)
 {
     u_short key_pressed = KeyFound | key;
