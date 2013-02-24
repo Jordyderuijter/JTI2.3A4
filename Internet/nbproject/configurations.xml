@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="84">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df name="source" root="../DagOpdracht1ButtonLCDBacklight/source">
+      <in>display.c</in>
+      <in>fat.c</in>
+      <in>flash.c</in>
+      <in>http.c</in>
+      <in>inet.c</in>
+      <in>keyboard.c</in>
+      <in>led.c</in>
+      <in>log.c</in>
+      <in>main.c</in>
+      <in>mmc.c</in>
+      <in>mmcdrv.c</in>
+      <in>remcon.c</in>
+      <in>rtc.c</in>
+      <in>session.c</in>
+      <in>spidrv.c</in>
+      <in>uart0driver.c</in>
+      <in>util.c</in>
+      <in>vs10xx.c</in>
+      <in>watchdog.c</in>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>../DagOpdracht1ButtonLCDBacklight/Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceFolderFilter>^(nbproject)$</sourceFolderFilter>
+  <sourceRootList>
+    <Elem>../DagOpdracht1ButtonLCDBacklight/source</Elem>
+  </sourceRootList>
+  <projectmakefile>../DagOpdracht1ButtonLCDBacklight/Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
+        <compilerSet>default</compilerSet>
+      </toolsSet>
+      <codeAssistance>
+      </codeAssistance>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>../DagOpdracht1ButtonLCDBacklight</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <executablePath></executablePath>
+          <cTool>
+            <incDir>
+              <pElem>../DagOpdracht1ButtonLCDBacklight/include</pElem>
+              <pElem>c:/winavr/avr/include</pElem>
+              <pElem>../DagOpdracht1ButtonLCDBacklight</pElem>
+              <pElem>c:/ethernut-4.3.3/nut/include</pElem>
+            </incDir>
+            <preprocessorList>
+              <Elem>NUTOS_VERSION=433</Elem>
+              <Elem>NUT_CPU_FREQ=14745600</Elem>
+              <Elem>__HARVARD_ARCH__</Elem>
+            </preprocessorList>
+          </cTool>
+        </makeTool>
+      </makefileType>
+      <item path="../DagOpdracht1ButtonLCDBacklight/source/http.c"
+            ex="true"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="../DagOpdracht1ButtonLCDBacklight/source/inet.c"
+            ex="true"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="../DagOpdracht1ButtonLCDBacklight/source/session.c"
+            ex="true"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="../DagOpdracht1ButtonLCDBacklight/source/util.c"
+            ex="true"
+            tool="0"
+            flavor2="0">
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>
