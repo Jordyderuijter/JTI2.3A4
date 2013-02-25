@@ -1,4 +1,4 @@
-#include <dev/board.h>
+#include "board.h"
 #include <sys/timer.h>
 #include <sys/confnet.h>
  
