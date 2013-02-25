@@ -322,7 +322,7 @@ void lcd_display_settings_menu()
     lcd_clear();
     display_mode = 1;
     // Enable cursor blinking
-    LcdWriteByte(WRITE_COMMAND, 0x0E);  // 0E: underline cursor. Or: 0F for block cursor
+    lcd_show_cursor(true);
     // Don't forget to turn cursor blinking off when whiching display mode!
 }
 
@@ -389,6 +389,14 @@ void lcd_display_timezone_setup()
 void _display_timezone_setup()
 {
     lcd_display_string("Timezone: ");
+}
+
+void lcd_show_cursor(bool value)
+{
+    if(value)
+        LcdWriteByte(WRITE_COMMAND, 0x0E);  // 0E: underline cursor. Or: 0F for block cursor
+    else
+        LcdWriteByte(WRITE_COMMAND, 0x0C);
 }
 
 /* ---------- end of module ------------------------------------------------ */

@@ -12,7 +12,7 @@
 
 #include <time.h>       // For tm struct
 #include <sys/thread.h>
-
+#include <stdbool.h>
 #ifndef _Display_H
 #define _Display_H
 
@@ -57,6 +57,7 @@ extern void LcdBackLight(u_char);
 extern void LcdInit(void);
 extern void LcdLowLevelInit(void);
 
+extern void lcd_backlight_on(int);
 extern void lcd_clear(void);
 extern void lcd_cursor_home(void);
 extern void lcd_display_main_screen(void);
@@ -65,7 +66,7 @@ extern void lcd_display_string(char*);
 extern int lcd_display_string_at(char*, int, int);
 extern void lcd_display_timestamp(tm* tm);
 extern void lcd_display_timezone_setup(void);
-extern void lcd_backlight_on(int);
+extern void lcd_show_cursor(bool);
 
 THREAD(DisplayThread, arg);
 
