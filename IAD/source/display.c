@@ -391,12 +391,32 @@ void _display_timezone_setup()
     lcd_display_string("Timezone: ");
 }
 
+/**
+ * Enables/disables underline cursor.
+ * @param value true enabled cursor, false disables cursor
+ */
 void lcd_show_cursor(bool value)
 {
     if(value)
         LcdWriteByte(WRITE_COMMAND, 0x0E);  // 0E: underline cursor. Or: 0F for block cursor
     else
         LcdWriteByte(WRITE_COMMAND, 0x0C);
+}
+
+/**
+ * Place cursor at the given position.
+ * @param The x-coordinate on the display (0-15)
+ * @param The y-coordinate on the display (0-1)
+ * @return 0 on success, -1 on failure
+ */
+int lcd_place_cursor_at(int x, int y)
+{
+    if(x < 0 || x > 15 || y < 0 || y > 1)
+        return -1;
+    
+    LcdWriteByte(WRITE_COMMAND, 0x80 + (y * 64) + x );          // DD-RAM address counter (cursor pos) to the requested position.
+    
+    return 0;
 }
 
 /* ---------- end of module ------------------------------------------------ */

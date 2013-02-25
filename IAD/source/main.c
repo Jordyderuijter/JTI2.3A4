@@ -291,9 +291,9 @@ void _main_init()
     /* Enable global interrupts */
     sei();
     
-    connect_to_internet();
+    /*connect_to_internet();
     ptime = get_ntp_time(0.0);
-    LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
+    LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );*/
     
     NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
     // NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
@@ -306,7 +306,7 @@ void _handle_mainscreen_input()
 {
     if(kb_button_is_pressed(KEY_ESC) && kb_button_is_pressed(KEY_POWER))        // Go to timezone setup
     {
-        lcd_display_string_at("Timezone: ", 0, 0);
+        lcd_display_timezone_setup();           // RESETS CURSOR, NEEDS FIXING!
         lcd_show_cursor(true);
         input_mode = 2;
     }
@@ -342,15 +342,16 @@ void _handle_settings_input()
  */
 void _handle_timezone_setup_input()
 {
-    static u_short time_cursor_position = 0;
-    static u_short utc_offset = 0;
+    static float utc_offset = 0;
+    static int cursor_position = 10;            // 10 = hours, 11 = minutes.
+    int i = 0;  // FOR TEMPORARY USE!
 
     if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen.
     {
         tm timestamp;
         X12RtcGetClock(&timestamp);
-        //_correct_timestamp_with_timezone(&timestamp, utc_offset);     Can this be done trough NTP??
-        timestamp.tm_hour += utc_offset;
+        //_correct_timestamp_with_timezone(&timestamp, utc_offset);     Can this be done through NTP??
+        timestamp.tm_hour += utc_offset;                // Is going to give problems with the day/month/years!!!
         X12RtcSetClock(&timestamp);
         
         lcd_show_cursor(false);
@@ -361,67 +362,71 @@ void _handle_timezone_setup_input()
         return;         // Since we have switched input mode we don't need to execute the other code in the function.
     }
     
-    if(kb_button_is_pressed(KEY_LEFT))
+    // Move cursor between hours and minutes.
+    if(kb_button_is_pressed(KEY_LEFT) || kb_button_is_pressed(KEY_RIGHT))
     {
-        if(time_cursor_position - 1 == -1)      // Use this check, we're using an UNSIGNED short here.
-           time_cursor_position = 3;
+        if(cursor_position == 10)
+            cursor_position = 11;
         else
-                time_cursor_position--;
-
-        //lcd_place_cursor_at(/*Previous Position*/, 0);
-    }
-    else if(kb_button_is_pressed(KEY_RIGHT))
-    {
-        time_cursor_position++;
+            cursor_position = 10;
         
-        if(time_cursor_position == 4)
-            time_cursor_position = 0;
-        
-        //lcd_place_cursor_at(/*Next Position*/, 0);
+        lcd_place_cursor_at(cursor_position, 0);
     }
     
-    if(time_cursor_position == 0)               // Position of 'ten-hours'
+    if(cursor_position == 10)               // Position of 'ten-hours'
     {
-        if(kb_button_is_pressed(KEY_01))
-            utc_offset = 10 + utc_offset % 10;
-        else if(kb_button_is_pressed(KEY_02))
-                utc_offset = 2 + utc_offset % 10;
+        if(kb_button_is_pressed(KEY_UP))
+        {
+            utc_offset = ((((short)utc_offset / 10) * 10 +              // Ten hours
+                    ((short)utc_offset) % 10) + 1) +                      // Single hours
+                    (utc_offset - (short)utc_offset);                   // Minutes (1/4 hours)
+            
+            if(utc_offset > 14)                        // 'Highest' possible timezone is +14:00.
+                utc_offset = -12;
+        }
+        else if(kb_button_is_pressed(KEY_DOWN))
+        {
+            utc_offset = ((((short)utc_offset / 10) * 10 -              // Ten hours
+                    ((short)utc_offset) % 10) - 1) -                               // Single hours
+                    (utc_offset - (short)utc_offset);                   // Minutes (1/4 hours)
+            
+            if(utc_offset < -12)                        // 'Lowest' possible timezone is -12:00
+                utc_offset = 14;
+        }
     }
-    else if(time_cursor_position == 1)
+    else        // Set the minutes in 15 minutes/button press.
     {
-        if(kb_button_is_pressed(KEY_01))
+        if(kb_button_is_pressed(KEY_UP))
         {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 1;
+            // TEMPORARY SOLUTION TO CHECK IF THE VALUE IS A x.00 VALUE!
+            for(i = -13; i < 16; i++)
+            {
+                if(utc_offset + 0.25 == i)
+                {
+                    utc_offset = (((short)utc_offset / 10) * 10 +               // Ten hours
+                            ((short)utc_offset) % 10);                          // Single hours
+                    
+                    return;
+                }
+            }
             
-            if(kb_button_is_pressed(KEY_ALT))
-                    utc_offset += 5;
+            utc_offset += 0.25;          // Add 15 minutes.
         }
-        else if(kb_button_is_pressed(KEY_02))
+        else if(kb_button_is_pressed(KEY_DOWN))
         {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 2;
+            // TEMPORARY SOLUTION TO CHECK IF THE VALUE IS A x.00 VALUE!
+            for(i = -13; i < 16; i++)
+            {
+                if(utc_offset - 0.25 == i)
+                {
+                    utc_offset = (((short)utc_offset / 10) * 10 +               // Ten hours
+                            ((short)utc_offset) % 10);                          // Single hours
+                    
+                    return;
+                }
+            }
             
-            if(kb_button_is_pressed(KEY_ALT))
-                utc_offset += 5;
-        }
-        else if(kb_button_is_pressed(KEY_03))
-        {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 3;
-            
-            if(kb_button_is_pressed(KEY_ALT))
-                utc_offset += 5;
-        }
-         else if(kb_button_is_pressed(KEY_04))
-         {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 4;
-            if(kb_button_is_pressed(KEY_ALT))
-                utc_offset += 5;
-         }
-        else if(kb_button_is_pressed(KEY_05))
-        {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 5;
-         
-        if(kb_button_is_pressed(KEY_ALT))
-            utc_offset = (((u_short)utc_offset / 10) * 10);
+            utc_offset -= 0.25;          // Subtract 15 minutes.
         }
     }
      

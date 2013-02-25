@@ -66,6 +66,7 @@ extern void lcd_display_string(char*);
 extern int lcd_display_string_at(char*, int, int);
 extern void lcd_display_timestamp(tm* tm);
 extern void lcd_display_timezone_setup(void);
+extern int lcd_place_cursor_at(int, int);
 extern void lcd_show_cursor(bool);
 
 THREAD(DisplayThread, arg);
