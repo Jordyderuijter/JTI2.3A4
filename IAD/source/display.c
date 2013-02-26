@@ -321,9 +321,6 @@ void lcd_display_settings_menu()
 {
     lcd_clear();
     display_mode = 1;
-    // Enable cursor blinking
-    lcd_show_cursor(true);
-    // Don't forget to turn cursor blinking off when whiching display mode!
 }
 
 /**
@@ -365,7 +362,7 @@ THREAD(DisplayThread, arg)
                 break;
         }
         
-        NutSleep(500);
+        NutSleep(100);
     }
 }
 

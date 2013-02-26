@@ -154,7 +154,7 @@ void _handle_mainscreen_input()
 {
     if(kb_button_is_pressed(KEY_OK))               // Go to settings menu
     {
-        //lcd_display_settings_menu();
+        lcd_display_settings_menu();
         input_mode = 1;
     }
     //else if(kb_button_is_pressed(KEY_UP))             // Display previous information item

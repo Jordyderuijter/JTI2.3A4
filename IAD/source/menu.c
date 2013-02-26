@@ -4,6 +4,7 @@
 
 #include "display.h"
 #include "menu.h"
+#include "rtc.h"
 
 #define MAX_MENU_ITEM_INDEX 2           // Zero-based index
 
@@ -20,7 +21,7 @@ void _show_alarmB_menu_item(void);
  */
 void _show_alarmA_menu_item()
 {
-    lcd_display_string("A:");
+    lcd_display_string_at("A:", 0, 1);
 }
 
 /**
@@ -28,7 +29,7 @@ void _show_alarmA_menu_item()
  */
 void _show_alarmA_snooze_menu_item()
 {
-    lcd_display_string("Snooze:");
+    lcd_display_string_at("Snooze:", 0, 1);
 }
 
 /**
@@ -36,7 +37,7 @@ void _show_alarmA_snooze_menu_item()
  */
 void _show_alarmB_menu_item()
 {
-    lcd_display_string("B:");
+    lcd_display_string_at("B:", 0, 1);
 }
 
 /**
@@ -86,11 +87,3 @@ void menu_settings_previous_item()
         menu_item = MAX_MENU_ITEM_INDEX;
 }
 
-/**
- * Returns the index of the currently displayed menu item.
- * @return Index of the currently displayed menu item.
- */
-u_short menu_get_current_menu_item()
-{
-    return menu_item;
-}
