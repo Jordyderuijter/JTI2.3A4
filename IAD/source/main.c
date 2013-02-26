@@ -257,6 +257,17 @@ void _main_init()
     tm gmt;     // Used to LOG the time.
     tm* ptime;
     
+    //mijnshit
+        tm ala;
+        tm alb;
+        
+        int flags = 0;
+    
+        u_long alarm_a;
+        u_long alarm_b;
+        int vsbeepa_stopped = 0;
+        int vsbeepb_stopped = 0;
+    
     /*
      *  First disable the watchdog
      */
@@ -281,6 +292,10 @@ void _main_init()
     At45dbInit();
     RcInit();
     KbInit();
+    
+    //mijnshit
+    VsPlayerInit();
+    
     SysControlMainBeat(ON);             // enable 4.4 msecs heartbeat interrupt
 
     /*
@@ -290,6 +305,92 @@ void _main_init()
 
     /* Enable global interrupts */
     sei();
+    
+    //mijnshit
+    //    Set time
+    gmt.tm_hour=11;
+    gmt.tm_min=37;
+    gmt.tm_sec=00;
+    gmt.tm_mday=19;
+    gmt.tm_mon=02;
+    gmt.tm_year=113;
+    
+    X12RtcSetClock(&gmt);
+
+//    //  Set alarm A
+//    ala.tm_hour=11;
+//    ala.tm_min=37;
+//    ala.tm_sec=5;
+//    ala.tm_mday=19;
+//    ala.tm_mon=02;
+//    ala.tm_year=113;
+//    
+//    X12RtcSetAlarm(0, &ala, 0b10011111);
+    
+    gmt.tm_sec+=5;
+    X12RtcSetAlarm(0, &gmt, 0b10011111);
+    
+//    //  Set alarm B
+//    alb.tm_hour=11;
+//    alb.tm_min=37;
+//    alb.tm_sec=10;
+//    alb.tm_mday=19;
+//    alb.tm_mon=02;
+//    alb.tm_year=113;
+//    
+//    X12RtcSetAlarm(1, &alb, 0b10011111);
+    
+    gmt.tm_sec+=5;
+    X12RtcSetAlarm(1, &gmt, 0b10011111);
+    
+    X12RtcGetAlarm(0, &ala, &flags);
+    LogMsg_P(LOG_INFO, PSTR("ALARM A [%02d:%02d:%02d]"), ala.tm_hour, ala.tm_min, ala.tm_sec );
+    X12RtcGetAlarm(1, &alb, &flags);
+    LogMsg_P(LOG_INFO, PSTR("BLARM B [%02d:%02d:%02d]"), alb.tm_hour, alb.tm_min, alb.tm_sec );
+    
+    int t = 0;
+    
+    for (;;)
+    {
+        NutSleep(10);
+        if( !((t++)%10) )
+        {
+            X12RtcGetStatus(&alarm_a);
+            alarm_b = alarm_a;
+            alarm_a &= 0b00100000;
+            
+            X12RtcGetClock(&gmt);
+            //LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
+            
+            alarm_b &= 0b01000000;
+                    
+            if(alarm_a!=0 && vsbeepa_stopped==0)
+            {
+                VsBeep(500, 1000);              //BeepBoop, beeps with (frequency, duration)
+                LogMsg_P(LOG_INFO, PSTR("ALAAAARM!!"));
+            }
+
+            if(alarm_b!=0 && vsbeepb_stopped==0)
+            {
+                VsBeep(1000, 1000);              //BeepBoop, beeps with (frequency, duration)
+                LogMsg_P(LOG_INFO, PSTR("BLBBBBRM!!"));
+            }
+
+            if(kb_button_is_pressed(KEY_ESC) && alarm_a!=0)
+            {
+                VsBeepStop();
+                vsbeepa_stopped = 1;
+                LogMsg_P(LOG_INFO, PSTR("beep a stopped"));
+            }
+
+            if(kb_button_is_pressed(KEY_ESC) && alarm_b!=0)
+            {
+                VsBeepStop();
+                vsbeepb_stopped = 1;
+                LogMsg_P(LOG_INFO, PSTR("beep b stopped"));
+            }
+        }
+    }
     
     connect_to_internet();
     ptime = get_ntp_time(0.0);
