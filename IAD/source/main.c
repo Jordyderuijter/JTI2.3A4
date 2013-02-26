@@ -132,7 +132,7 @@ int main(void)
                 _handle_mainscreen_input();
                 break;
             case 1:
-                _handle_settings_input();
+                menu_handle_settings_input(&input_mode);
                 break;
             case 2:
                 _handle_timezone_setup_input();
@@ -156,27 +156,12 @@ void _handle_mainscreen_input()
     {
         lcd_display_settings_menu();
         input_mode = 1;
+        lcd_show_cursor(true);
     }
     //else if(kb_button_is_pressed(KEY_UP))             // Display previous information item
         //Display previous information item here.
     //else if(kb_button_is_pressed(KEY_DOWN))           // Display next information item
         // Display next information item here.
-}
-
-/**
- * Handles input in 'settings menu mode'.
- */
-void _handle_settings_input()
-{
-    // USE "MENU_SETTINGS_HANDLE_INPUT(key)" or something similar??
-    
-    // Handle settings menu input
-        if(kb_button_is_pressed(KEY_UP))
-            menu_settings_previous_item();
-        else if(kb_button_is_pressed(KEY_DOWN))
-            menu_settings_next_item();
-        //else if(menu_get_current_menu_item() == 0 && kb_button_is_pressed(KEY_01))         // This can probably be done more efficient.
-        // Change value of alarm A time.
 }
 
 /**
