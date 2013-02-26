@@ -327,19 +327,23 @@ void lcd_display_settings_menu()
 }
 
 /**
+ * Shows the timezone setup screen.
+ */
+void lcd_display_timezone_setup()
+{
+    lcd_clear();
+    display_mode = 2;
+}
+
+/**
  * Starting point of the thread that handles everything on the LCD screen.
  * @param arg
  */
 THREAD(DisplayThread, arg)
-{
-    tm time_stamp;
-    
+{    
     for(;;)
     {
-        // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
-        lcd_cursor_home();     // Can probably be removed, first needs testing though!
-        X12RtcGetClock(&time_stamp);
-        lcd_display_timestamp(&time_stamp);
+        //lcd_cursor_home();     // Can probably be removed, first needs testing though!
         
         // Turn off the backlight if it was temporarily enabled.
         if(lcd_backlight_time == 0)
@@ -370,17 +374,13 @@ THREAD(DisplayThread, arg)
  */
 void _display_main_screen()
 {
-    display_mode = 0;
+    // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
+    static tm time_stamp;
+    
+    X12RtcGetClock(&time_stamp);
+    lcd_display_timestamp(&time_stamp);
+    
     // Display radio/RSS info here.
-}
-
-/**
- * Shows the timezone setup screen.
- */
-void lcd_display_timezone_setup()
-{
-    lcd_clear();
-    display_mode = 2;
 }
 
 /**

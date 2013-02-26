@@ -44,6 +44,12 @@ void _show_alarmB_menu_item()
  */
 void menu_show_settings()
 {
+    // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
+    static tm time_stamp;
+    
+    X12RtcGetClock(&time_stamp);
+    lcd_display_timestamp(&time_stamp);
+    
     switch(menu_item)
     {
         case 0:                                 // Show alarm A time setting.

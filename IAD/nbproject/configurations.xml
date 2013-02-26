@@ -8,7 +8,6 @@
         <in>fat.h</in>
         <in>fatdrv.h</in>
         <in>flash.h</in>
-        <in>inet.h</in>
         <in>keyboard.h</in>
         <in>led.h</in>
         <in>log.h</in>
