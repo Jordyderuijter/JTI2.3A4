@@ -9,7 +9,7 @@
 #define MAX_MENU_ITEM_INDEX 2           // Zero-based index
 
 // 'LOCAL VARIABLE DEFINITIONS'
-u_short menu_item = 0;          // Menu item to display. See documentation of _show_menu_item for more information.
+short menu_item = 0;          // Menu item to display. See documentation of _show_menu_item for more information.
 
 // PROTOTYPES
 void _show_alarmA_menu_item(void);
