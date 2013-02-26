@@ -20,7 +20,7 @@ void _show_alarmB_menu_item(void);
  */
 void _show_alarmA_menu_item()
 {
-    lcd_display_string("A:");
+    lcd_display_string_at("A:",0,0);
 }
 
 /**
@@ -28,7 +28,7 @@ void _show_alarmA_menu_item()
  */
 void _show_alarmA_snooze_menu_item()
 {
-    lcd_display_string("Snooze:");
+    lcd_display_string_at("Snooze:",0,0);
 }
 
 /**
@@ -36,7 +36,7 @@ void _show_alarmA_snooze_menu_item()
  */
 void _show_alarmB_menu_item()
 {
-    lcd_display_string("B:");
+    lcd_display_string_at("B:",0,0);
 }
 
 /**

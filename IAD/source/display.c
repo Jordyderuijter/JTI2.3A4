@@ -38,16 +38,33 @@
 /*-------------------------------------------------------------------------*/
 static int display_mode = 0;                // The current display mode. 0=Main, 1=Settings menu, 2=timezone setup
 static int lcd_backlight_time = 0;          // Used for temporarily lighting up the display. (time in ~500ms/half seconds)
+static int offset = 0;                      // The offset of the information scrolling.
+static char information[] = "Herperderpie";             // The information displayed on the LCD screen.
 
 /*-------------------------------------------------------------------------*/
 /* local routines (prototyping)                                            */
 /*-------------------------------------------------------------------------*/
+void LcdBackLight(u_char Mode);
+void LcdChar(char MyChar);
+void LcdLowLevelInit();
 static void LcdWriteByte(u_char, u_char);
 static void LcdWriteNibble(u_char, u_char);
 static void LcdWaitBusy(void);
-
+void lcd_clear();
+void lcd_cursor_home();
+void lcd_display_timestamp(struct _tm* tm);
+int lcd_display_string_at(char* string, int x, int y);
+void lcd_backlight_on(int time);
+void lcd_display_alarmstatus(bool alarmA, bool alarmB);
+void lcd_display_information();
+void lcd_set_information(char *tmp_information);
+void lcd_display_main_screen();
+void lcd_display_settings_menu();
 void _display_main_screen(void);
+void lcd_display_timezone_setup();
 void _display_timezone_setup(void);
+void lcd_show_cursor(bool value);
+
 
 /*!
  * \addtogroup Display
@@ -128,8 +145,6 @@ void LcdChar(char MyChar)
     NutDelay(5);
 
     LcdWriteByte(WRITE_COMMAND, 0x06);          // entry mode set: increment mode, entire shift OFF
-
-
     LcdWriteByte(WRITE_COMMAND, 0x80);          // DD-RAM address counter (cursor pos) to '0'
 }
 
@@ -252,22 +267,10 @@ void lcd_display_timestamp(struct _tm* tm)
 {    
     char string[] = {    '0' + (tm->tm_hour / 10), '0' + (tm->tm_hour % 10), ':',
                         '0' + (tm->tm_min / 10), '0' + (tm->tm_min % 10),
-
-                        //'0' + (tm->tm_sec / 10), '0' + (tm->tm_sec % 10),
-                        ' ', ' ',
-
+                        ' ',
                         '0' + (tm->tm_mday / 10), '0' + (tm->tm_mday % 10), '-',
                         '0' + (tm->tm_mon / 10), '0' + (tm->tm_mon % 10), '-',
-                        '0' + ((tm->tm_year % 100) / 10) - 1, '0' + (tm->tm_year % 10), '\0'};
-    lcd_display_string(string);
-}
-
-/**
- * Displays the given string on the LCD display, starting at the current cursor position.
- * @param string The string to display
- */
-void lcd_display_string(char * string)
-{
+                        '2', '0' + (tm->tm_year /100)-1, '0' + ((tm->tm_year % 100) / 10) - 1, '0' + (tm->tm_year % 10), '\0'};
     lcd_display_string_at(string, 0, 0);
 }
 
@@ -305,6 +308,93 @@ void lcd_backlight_on(int time)
     }
 }
 
+/*
+ * Displays the status of alarm A and alarm B on the bottom right of the screen.
+ */
+void lcd_display_alarmstatus(bool alarmA, bool alarmB)
+{
+    if(alarmA) 
+    {
+        if(alarmB)  
+        {
+            char alarmStatus[4] = "|AB";
+            lcd_display_string_at(alarmStatus, 13, 1);
+        }
+        else
+        {
+            char alarmStatus[4] = "|A ";
+            lcd_display_string_at(alarmStatus, 13, 1); 
+        }
+    }
+    else
+    {
+        if(alarmB)
+        {
+            char alarmStatus[4] = "| B";
+            lcd_display_string_at(alarmStatus, 13, 1);
+        }
+        else
+        {
+            char alarmStatus[4] = "|  ";
+            lcd_display_string_at(alarmStatus, 13, 1); 
+        }
+    }
+    
+}
+
+/*
+ * Displays the information on the screen, if the information is longer than 13 characters it will scroll.
+ */
+void lcd_display_information()
+{
+    int information_size = strlen(information)+2;
+    char visibleString[14];
+    
+    //If "information" is longer than 13 characters it won't fit on the screen, so it will be scrolled.
+    if(information_size > 13)
+    {    
+        int i;                   
+        for(i = 0; i < 13; i++)
+        {
+            if(!(i+offset >= information_size-1)) //End of string not reached yet.
+            {           
+                if(information[i + offset] == '\0') //If the last char of the string has been reached, display a slash.
+                {
+                    visibleString[i] = '/';  
+                }
+                else                                //If the last char of the string has not been reached, just display the char.
+                {
+                    visibleString[i] = information[i + offset];
+                }
+            }
+            else                                    //End of string reached.
+            {                                    
+                visibleString[i] = information[i + offset - information_size+1];
+            }
+        }  
+        visibleString[13] = '\0';
+        lcd_display_string_at(visibleString, 0, 1); //Display the full string on the LCD.
+        
+        offset++;                                   //Increase the offset of the string by 1.
+        if(offset == information_size -1)           //If the end of the string has been reached, start over at the beginning of the string.
+        {
+            offset = 0;
+        }
+    }
+    else
+    {
+        lcd_display_string_at(information, 0, 1);
+    }
+}
+
+/*
+ * Sets the information which is displayed on the bottom left of the screen.
+ */
+void lcd_set_information(char *tmp_information)
+{
+    strcpy(information, tmp_information);
+}
+
 /**
  * Changes 'displaymode' to display the 'main screen'.
  */
@@ -327,7 +417,46 @@ void lcd_display_settings_menu()
 }
 
 /**
- * Starting point of the thread that handles everything on the LCD screen.
+ * Shows the main screen (radio/rss information)
+ */
+void _display_main_screen()
+{
+    display_mode = 0;
+    // Display radio/RSS info here.
+}
+
+/**
+ * Shows the timezone setup screen.
+ */
+void lcd_display_timezone_setup()
+{
+    lcd_clear();
+    display_mode = 2;
+}
+
+/**
+ * Shows the timezone setup.
+ */
+void _display_timezone_setup()
+{
+    lcd_display_string_at("Timezone: ",0,0);
+}
+
+void lcd_show_cursor(bool value)
+{
+    if(value)
+        LcdWriteByte(WRITE_COMMAND, 0x0E);  // 0E: underline cursor. Or: 0F for block cursor
+    else
+        LcdWriteByte(WRITE_COMMAND, 0x0C);
+}
+
+
+/*-------------------------------------------------------------------------*/
+/* threads                                                                 */
+/*-------------------------------------------------------------------------*/
+
+/**
+ * Starting point of the thread that handles everything on the LCD screen except the information.
  * @param arg
  */
 THREAD(DisplayThread, arg)
@@ -339,7 +468,8 @@ THREAD(DisplayThread, arg)
         // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
         lcd_cursor_home();     // Can probably be removed, first needs testing though!
         X12RtcGetClock(&time_stamp);
-        lcd_display_timestamp(&time_stamp);
+        lcd_display_timestamp(&time_stamp); //Shows the time and date on first line of the screen.
+        lcd_display_alarmstatus(true, true); //Shows the status of the alarms on the screen in the bottom right corner.
         
         // Turn off the backlight if it was temporarily enabled.
         if(lcd_backlight_time == 0)
@@ -366,37 +496,16 @@ THREAD(DisplayThread, arg)
 }
 
 /**
- * Shows the main screen (radio/rss information)
+ * Starting point of the thread that handles the information on the LCD screen.
+ * @param arg
  */
-void _display_main_screen()
-{
-    display_mode = 0;
-    // Display radio/RSS info here.
-}
-
-/**
- * Shows the timezone setup screen.
- */
-void lcd_display_timezone_setup()
-{
-    lcd_clear();
-    display_mode = 2;
-}
-
-/**
- * Shows the timezone setup.
- */
-void _display_timezone_setup()
-{
-    lcd_display_string("Timezone: ");
-}
-
-void lcd_show_cursor(bool value)
-{
-    if(value)
-        LcdWriteByte(WRITE_COMMAND, 0x0E);  // 0E: underline cursor. Or: 0F for block cursor
-    else
-        LcdWriteByte(WRITE_COMMAND, 0x0C);
+THREAD(InformationThread, arg)
+{	
+    for(;;)
+    {    
+        NutSleep(500);
+        lcd_display_information(); //Display the information on the left bottom of the screen.    
+    }
 }
 
 /* ---------- end of module ------------------------------------------------ */

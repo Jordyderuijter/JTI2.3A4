@@ -66,15 +66,16 @@ static u_short input_mode = 0; // Determines which 'input mode' is used. 0=mains
 /* local routines (prototyping)                                            */
 /*-------------------------------------------------------------------------*/
 static void SysMainBeatInterrupt(void*);
+void SysInitIO(void);
 static void SysControlMainBeat(u_char);
 
+void _main_init(void);
 void _handle_mainscreen_input(void);
 void _handle_settings_input(void);
 void _handle_timezone_setup_input(void);
-void _main_init(void);
 
-void connect_to_internet(void);         // USE THESE TWO FUNCTIONS FROM inet.h AFTER MAKEFILE CAN BE EDITED
 tm* get_ntp_time(float);
+void connect_to_internet(void);         // USE THESE TWO FUNCTIONS FROM inet.h AFTER MAKEFILE CAN BE EDITED
 
 /*-------------------------------------------------------------------------*/
 /* Stack check variables placed in .noinit section                         */
@@ -291,12 +292,13 @@ void _main_init()
     /* Enable global interrupts */
     sei();
     
-    connect_to_internet();
-    ptime = get_ntp_time(0.0);
-    LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
+    //connect_to_internet();
+    //ptime = get_ntp_time(0.0);
+    //LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
     
     NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
     // NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
+    NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
 }
 
 /**
