@@ -61,7 +61,7 @@ extern void lcd_display_timestamp(tm* tm);
 extern int lcd_display_string_at(char*, int, int);
 extern void lcd_backlight_on(int);
 extern void lcd_display_alarmstatus(bool, bool);
-extern void lcd_display_information();
+extern void lcd_display_information(void);
 extern void lcd_set_information(char *);
 extern void lcd_display_main_screen(void);
 extern void lcd_display_settings_menu(void);

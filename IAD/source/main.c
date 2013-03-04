@@ -219,8 +219,20 @@ static void SysControlMainBeat(u_char OnOff)
  */
 /* ����������������������������������������������������������������������� */
 int main(void)
-{    
+{
+    bool is_first_startup = true;
+    
     _main_init();
+    
+    // If this is the first startup EVER, show the timezone setup.
+    At45dbPageRead(0, &is_first_startup, 1);
+    
+    if(is_first_startup)
+    {
+        input_mode = 2;
+        is_first_startup = false;
+        At45dbPageWrite(0, &is_first_startup, 1);
+    }
 	
     for (;;)
     {
@@ -256,7 +268,6 @@ int main(void)
 void _main_init()
 {
     tm gmt;     // Used to LOG the time.
-    tm* ptime;
     
     /*
      *  First disable the watchdog

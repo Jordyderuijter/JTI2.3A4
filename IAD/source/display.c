@@ -46,22 +46,22 @@ static char information[] = "Herperderpie";             // The information displ
 /*-------------------------------------------------------------------------*/
 void LcdBackLight(u_char Mode);
 void LcdChar(char MyChar);
-void LcdLowLevelInit();
+void LcdLowLevelInit(void);
 static void LcdWriteByte(u_char, u_char);
 static void LcdWriteNibble(u_char, u_char);
 static void LcdWaitBusy(void);
-void lcd_clear();
-void lcd_cursor_home();
+void lcd_clear(void);
+void lcd_cursor_home(void);
 void lcd_display_timestamp(struct _tm* tm);
 int lcd_display_string_at(char* string, int x, int y);
 void lcd_backlight_on(int time);
 void lcd_display_alarmstatus(bool alarmA, bool alarmB);
-void lcd_display_information();
+void lcd_display_information(void);
 void lcd_set_information(char *tmp_information);
-void lcd_display_main_screen();
-void lcd_display_settings_menu();
+void lcd_display_main_screen(void);
+void lcd_display_settings_menu(void);
 void _display_main_screen(void);
-void lcd_display_timezone_setup();
+void lcd_display_timezone_setup(void);
 void _display_timezone_setup(void);
 void lcd_show_cursor(bool value);
 
