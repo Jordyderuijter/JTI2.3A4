@@ -100,6 +100,7 @@ void menu_handle_settings_input(u_short* input_mode)
     static struct hm* p_alarm_a = &alarm_a;
     static u_short cursor_position = 3;
     static char display_string[6];
+    static short snooze_interval;
     
     if(kb_button_is_pressed(KEY_ESC) && !in_edit_mode)
     {
@@ -122,10 +123,13 @@ void menu_handle_settings_input(u_short* input_mode)
                 //set_alarm_a(p_alarm_a);
                 break;
             case 1:
+                //set_alarm_a_snooze_interval(snooze_interval);
                 break;
             case 2:
+                //set_alarm_b_time(p_alarm_b_time);
                 break;
             case 3:
+                //set_alarm_b_date(p_alarm_b_date);
                 break;
         }
     }
@@ -147,6 +151,10 @@ void menu_handle_settings_input(u_short* input_mode)
                 if(p_alarm_a->hm_minutes > 59)
                     p_alarm_a->hm_minutes = 0;
             }
+        }
+        else if(menu_item == 1 && in_edit_mode)
+        {
+            snooze_interval++;
         }
         else
             menu_settings_previous_item();
@@ -193,14 +201,14 @@ void menu_handle_settings_input(u_short* input_mode)
     {
         switch(menu_item)
         {
-            case 0:
-            case 2:
+            case 0:                             // Alarm A time
+            case 2:                             // Alarm B time
                 if(cursor_position == 3)
                     cursor_position = 6;
                 else
                     cursor_position = 3;
                 break;
-            case 3:
+            case 3:                             // Alarm B date
                 // Date
                 break;
         }
