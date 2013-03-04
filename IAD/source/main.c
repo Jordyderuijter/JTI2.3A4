@@ -15,6 +15,9 @@
  
 #define LOG_MODULE  LOG_MAIN_MODULE
 
+//#define RESET   // If defined, this will reset the 'first time setup status'.
+                //Should only be used when uploading code without this defined immediately afterwards!!
+
 /*--------------------------------------------------------------------------*/
 /*  Include files                                                           */
 /*--------------------------------------------------------------------------*/
@@ -224,16 +227,24 @@ int main(void)
     
     _main_init();
     
+#ifdef RESET
+    At45dbPageWrite(0, &is_first_startup, 1);
+#endif
+    
+#ifndef RESET
     // If this is the first startup EVER, show the timezone setup.
     At45dbPageRead(0, &is_first_startup, 1);
     
     if(is_first_startup)
     {
+        lcd_display_timezone_setup(); // RESETS CURSOR, NEEDS FIXING!
+        lcd_show_cursor(true);
         input_mode = 2;
         is_first_startup = false;
         At45dbPageWrite(0, &is_first_startup, 1);
     }
-	
+#endif
+    
     for (;;)
     {
         // If a key is pressed, light up the LCD screen.
