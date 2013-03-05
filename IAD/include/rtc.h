@@ -154,5 +154,11 @@ extern int X12RtcWrite(int nv, CONST u_char *buff, size_t len);
 extern int X12EepromRead(u_int addr, void *buff, size_t len);
 extern int X12EepromWrite(u_int addr, CONST void *buff, size_t len);
 
+extern void set_alarm_a(tm* time);
+extern tm* get_alarm_a(tm* gmt);
+extern void set_alarm_b(tm* time);
+extern tm* get_alarm_b(tm* gmt);
+extern void disable_alarm_b(void);
+
 /* End of prototypes */
 #endif
