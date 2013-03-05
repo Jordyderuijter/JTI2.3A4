@@ -1,0 +1,2 @@
+First time setup status		-	boolean		-	page 0		-	1 byte
+UTC timezone			-	hm struct	-	page 1		-	4 bytes(?TO TEST?)
