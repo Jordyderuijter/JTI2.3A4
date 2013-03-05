@@ -103,7 +103,7 @@ void menu_handle_settings_input(u_short* input_mode)
     static struct hm alarm_a;
     static struct hm* p_alarm_a = &alarm_a;
     static tm alarm_b;
-    static tm* p_alarm_b;
+    static tm* p_alarm_b = &alarm_b;
     static u_short cursor_position = 3;
     static char display_string[14];
     static short snooze_interval;
@@ -391,7 +391,6 @@ void menu_handle_settings_input(u_short* input_mode)
             display_string[1] = '0' + p_alarm_b->tm_mday % 10;
             display_string[2] = '-';
             display_string[3] = '0' + p_alarm_b->tm_mon / 9 ;
-            printf("maand:%d", p_alarm_b->tm_mon);
             if(p_alarm_b->tm_mon / 9 == 1)
                 display_string[4] = '0' + p_alarm_b->tm_mon % 9 ;
             else

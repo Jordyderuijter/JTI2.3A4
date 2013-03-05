@@ -321,7 +321,6 @@ void connect_to_internet()
 void _main_init()
 {
     tm gmt;     // Used to LOG the time.
-    tm* ptime;
     
     /*
      *  First disable the watchdog
