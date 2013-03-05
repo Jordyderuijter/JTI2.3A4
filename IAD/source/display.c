@@ -346,7 +346,9 @@ THREAD(DisplayThread, arg)
         if(lcd_backlight_time == 0)
             LcdBackLight(LCD_BACKLIGHT_OFF);
         else
-            lcd_backlight_time--;   // Decrease the backlight 'timer'.
+        {
+            lcd_backlight_time--;   // Decrease the backlight 'timer'.      
+        }
         
         // Display the 'variable' information at each update, based on the value of display_mode.
         switch(display_mode)
