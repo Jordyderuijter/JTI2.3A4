@@ -165,7 +165,6 @@ void menu_handle_settings_input(u_short* input_mode)
         button_cooldown = true;
         if(menu_item == 0 && in_edit_mode)
         {
-            printf("Alarm A edit mode");
             if(cursor_position == 3)
             {
                 p_alarm_a->hm_hours++;
@@ -231,7 +230,6 @@ void menu_handle_settings_input(u_short* input_mode)
         button_cooldown = true;
         if(menu_item == 0 && in_edit_mode)
         {
-            printf("Alarm A edit mode");
             if(cursor_position == 3)
             {
                 p_alarm_a->hm_hours--;
@@ -249,14 +247,12 @@ void menu_handle_settings_input(u_short* input_mode)
         }
         else if(menu_item == 1 && in_edit_mode)
         {       
-            printf("Snooze edit mode");
             snooze_interval--;
             if(snooze_interval < 0)
                 snooze_interval = 120;
         }
         else if(menu_item == 2 && in_edit_mode)
         {
-            printf("Alarm B tijd edit mode");
             if(cursor_position == 3)
             {
                 p_alarm_b->tm_hour--;              
@@ -272,7 +268,6 @@ void menu_handle_settings_input(u_short* input_mode)
         }
         else if(menu_item == 3 && in_edit_mode)
         {
-            printf("Alarm B datum edit mode");
             if(cursor_position == 3)
             {
                 p_alarm_b->tm_mday--;              
@@ -292,7 +287,6 @@ void menu_handle_settings_input(u_short* input_mode)
         }
         else
         {
-            printf("geen edit mode");
             menu_settings_next_item();
         }
     }
