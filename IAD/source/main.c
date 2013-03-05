@@ -157,7 +157,6 @@ void _handle_mainscreen_input()
     {
         lcd_display_settings_menu();
         input_mode = 1;
-        lcd_show_cursor(true);
     }
     //else if(kb_button_is_pressed(KEY_UP))             // Display previous information item
         //Display previous information item here.

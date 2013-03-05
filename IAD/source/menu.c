@@ -121,7 +121,7 @@ void menu_handle_settings_input(u_short* input_mode)
         first_call = false;
     }
     
-    if(button_cooldown_counter >= 5)
+    if(button_cooldown_counter >= 2)
     {
         button_cooldown = false;
         button_cooldown_counter = 0;
@@ -143,22 +143,7 @@ void menu_handle_settings_input(u_short* input_mode)
     {
         button_cooldown = true;
         in_edit_mode = !in_edit_mode;
-        lcd_show_cursor(in_edit_mode);
-        switch(menu_item)
-        {
-            case 0:
-                //set_alarm_a(p_alarm_a);
-                break;
-            case 1:
-                //set_alarm_a_snooze_interval(snooze_interval);
-                break;
-            case 2:
-                //set_alarm_b_time(p_alarm_b_time);
-                break;
-            case 3:
-                //set_alarm_b_date(p_alarm_b_date);
-                break;
-        }
+        lcd_show_cursor(in_edit_mode);    
     }
     else if(kb_button_is_pressed(KEY_UP) && !button_cooldown)
     {

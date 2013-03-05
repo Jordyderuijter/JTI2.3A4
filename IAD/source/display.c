@@ -397,7 +397,7 @@ void _display_timezone_setup()
 void lcd_show_cursor(bool value)
 {
     if(value)
-        LcdWriteByte(WRITE_COMMAND, 0x0E);  // 0E: underline cursor. Or: 0F for block cursor
+        LcdWriteByte(WRITE_COMMAND, 0x0F);  // 0E: underline cursor. Or: 0F for block cursor
     else
         LcdWriteByte(WRITE_COMMAND, 0x0C);
 }
