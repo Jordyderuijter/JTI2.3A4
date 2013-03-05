@@ -39,7 +39,7 @@
 static int display_mode = 0;                // The current display mode. 0=Main, 1=Settings menu, 2=timezone setup
 static int lcd_backlight_time = 0;          // Used for temporarily lighting up the display. (time in ~500ms/half seconds)
 static int offset = 0;                      // The offset of the information scrolling.
-static char information[] = "Herperderpie";             // The information displayed on the LCD screen.
+static char information[] = "Testcode";             // The information displayed on the LCD screen.
 
 /*-------------------------------------------------------------------------*/
 /* local routines (prototyping)                                            */

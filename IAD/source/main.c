@@ -73,8 +73,8 @@ void SysInitIO(void);
 static void SysControlMainBeat(u_char);
 
 void _main_init(void);
-void _handle_settings_input(void);
 void _handle_timezone_setup_input(void);
+void _handle_mainscreen_input(void);
 
 tm* get_ntp_time(float);
 void connect_to_internet(void);         // USE THESE TWO FUNCTIONS FROM inet.h AFTER MAKEFILE CAN BE EDITED
@@ -153,6 +153,7 @@ int main(void)
                 _handle_mainscreen_input();
                 break;
             case 1:
+                lcd_set_information("");
                 menu_handle_settings_input(&input_mode);
                 break;
             case 2:

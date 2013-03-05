@@ -13,34 +13,11 @@
 // 'LOCAL VARIABLE DEFINITIONS'
 short menu_item = 0;           // Menu item to display. 0 = A time, 1 = A snooze, 2 = B time, 3 = B date.
 
-// PROTOTYPES
-void _show_alarmA_menu_item(void);
-void _show_alarmA_snooze_menu_item(void);
-void _show_alarmB_menu_item(void);
-
-/**
- * Show the settings item for the time of alarm A.
- */
-void _show_alarmA_menu_item()
-{
-    lcd_display_string_at("A:",0,1);
-}
-
-/**
- * Show the settings item for the snooze interval of alarm A.
- */
-void _show_alarmA_snooze_menu_item()
-{
-    lcd_display_string_at("Snooze:",0,1);
-}
-
-/**
- * Show the settings item for the date and time of alarm B.
- */
-void _show_alarmB_menu_item()
-{
-    lcd_display_string_at("B:",0,1);
-}
+void menu_show_settings(void);
+void menu_settings_next_item(void);
+void menu_settings_previous_item(void);
+void menu_handle_settings_input(u_short* input_mode);
+void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooze_interval, int menu_item);
 
 /**
  * Opens the settings menu.
@@ -54,22 +31,6 @@ void menu_show_settings()
     
     X12RtcGetClock(&time_stamp);
     lcd_display_timestamp(&time_stamp);
-    
-    switch(menu_item)
-    {
-        case 0:                                 // Show alarm A time setting.
-            _show_alarmA_menu_item();
-            break;
-        case 1:                                 // Show alarm A snooze setting.
-            _show_alarmA_snooze_menu_item();
-            break;
-        case 2:                                 // Show alarm B time setting.
-            _show_alarmB_menu_item();
-            break;
-        case 3:                                 // Show alarm B date setting.
-            _show_alarmB_menu_item();
-            break;
-    }
 }
 
 /**
@@ -77,8 +38,7 @@ void menu_show_settings()
  */
 void menu_settings_next_item()
 {
-    menu_item++;
-    
+    menu_item++;  
     if(menu_item > MAX_MENU_ITEM_INDEX)
         menu_item = 0;
 }
@@ -89,7 +49,6 @@ void menu_settings_next_item()
 void menu_settings_previous_item()
 {
     menu_item--;
-    
     if(menu_item < 0)
         menu_item = MAX_MENU_ITEM_INDEX;
 }
@@ -105,7 +64,6 @@ void menu_handle_settings_input(u_short* input_mode)
     static tm alarm_b;
     static tm* p_alarm_b = &alarm_b;
     static u_short cursor_position = 3;
-    static char display_string[14];
     static short snooze_interval;
     static short button_cooldown_counter = 0; 
     static bool button_cooldown = true;
@@ -320,82 +278,78 @@ void menu_handle_settings_input(u_short* input_mode)
         }
     }
     
-    // USE DISPLAY FUNCTION INSTEAD OF THIS IF STATEMENTS!!!
-    switch(menu_item)
-    {
-        case 0:
-            display_string[0] = '0' + p_alarm_a->hm_hours / 10;
-            display_string[1] = '0' + p_alarm_a->hm_hours % 10;
-            display_string[2] = ':';
-            display_string[3] = '0' + p_alarm_a->hm_minutes / 10;
-            display_string[4] = '0' + p_alarm_a->hm_minutes % 10;
-            display_string[5] = ' ';  
-            display_string[6] = ' ';
-            display_string[7] = ' ';
-            display_string[8] = ' ';
-            display_string[9] = ' ';
-            display_string[10] = ' ';
-            display_string[11] = ' ';
-            display_string[12] = ' ';
-            display_string[13] = '\0';
-            lcd_display_string_at(display_string, 3, 1);
-            break;
-    
-        case 1:
-            display_string[0] = '0' + snooze_interval / 100;
-            display_string[1] = '0' + snooze_interval %100 / 10;
-            display_string[2] = '0' + snooze_interval %10;    
-            display_string[3] = ' ';
-            display_string[4] = 'm';
-            display_string[5] = 'i';
-            display_string[6] = 'n';
-            display_string[7] = '.';
-            display_string[8] = '\0';
-            lcd_display_string_at(display_string, 8, 1);
-            break;
-         
-        case 2:
-            display_string[0] = '0' + p_alarm_b->tm_hour / 10;
-            display_string[1] = '0' + p_alarm_b->tm_hour % 10;
-            display_string[2] = ':';
-            display_string[3] = '0' + p_alarm_b->tm_min / 10;
-            display_string[4] = '0' + p_alarm_b->tm_min % 10;
-            display_string[5] = ' ';  
-            display_string[6] = ' ';
-            display_string[7] = ' ';
-            display_string[8] = ' ';
-            display_string[9] = ' ';
-            display_string[10] = ' ';
-            display_string[11] = ' ';
-            display_string[12] = ' ';
-            display_string[13] = '\0'; 
-            lcd_display_string_at(display_string, 3, 1);
-            break;
-            
-        case 3:
-            display_string[0] = '0' + p_alarm_b->tm_mday / 10;
-            display_string[1] = '0' + p_alarm_b->tm_mday % 10;
-            display_string[2] = '-';
-            display_string[3] = '0' + p_alarm_b->tm_mon / 9 ;
-            if(p_alarm_b->tm_mon / 9 == 1)
-                display_string[4] = '0' + p_alarm_b->tm_mon % 9 ;
-            else
-                display_string[4] = '1' + p_alarm_b->tm_mon % 10 ;
-            display_string[5] = '-';  
-            display_string[6] = '0' + p_alarm_b->tm_year / 1000;
-            display_string[7] = '0' + p_alarm_b->tm_year % 1000 / 100;
-            display_string[8] = '0' + p_alarm_b->tm_year % 100 / 10;
-            display_string[9] = '0' + p_alarm_b->tm_year % 10;
-            display_string[10] = ' ';
-            display_string[11] = ' ';
-            display_string[12] = ' ';
-            display_string[13] = '\0';
-            lcd_display_string_at(display_string, 3, 1);
-            break;
-    }
-    
+    // Handles the display of the settings menu on the LCD screen.
+    menu_lcd_display_information(p_alarm_a, p_alarm_b, snooze_interval, menu_item);  
+   
     if(button_cooldown)
         button_cooldown_counter++;
     
     lcd_place_cursor_at(cursor_position, 1);
+}
+
+void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooze_interval, int menu_item)
+{
+    char display_string[] = "             ";
+    switch(menu_item)
+    {
+        case 0:
+            display_string[0] = 'A';
+            display_string[1] = ':';
+            display_string[2] = '0' + p_alarm_a->hm_hours / 10;
+            display_string[3] = '0' + p_alarm_a->hm_hours % 10;
+            display_string[4] = ':';
+            display_string[5] = '0' + p_alarm_a->hm_minutes / 10;
+            display_string[6] = '0' + p_alarm_a->hm_minutes % 10;
+            display_string[12] = '\0';
+            lcd_display_string_at(display_string, 3, 1);
+            break;
+    
+        case 1:
+            display_string[0] = 'S';
+            display_string[1] = 'n';
+            display_string[2] = 'o';
+            display_string[3] = 'o';
+            display_string[4] = 'z';
+            display_string[5] = 'e';
+            display_string[6] = ':';          
+            display_string[7] = '0' + snooze_interval / 100;
+            display_string[8] = '0' + snooze_interval %100 / 10;
+            display_string[9] = '0' + snooze_interval %10;    
+            display_string[10] = 'm';
+            display_string[12] = '\0';
+            lcd_display_string_at(display_string, 8, 1);
+            break;
+         
+        case 2:
+            display_string[0] = 'B';
+            display_string[1] = ':';
+            display_string[2] = '0' + p_alarm_b->tm_hour / 10;
+            display_string[3] = '0' + p_alarm_b->tm_hour % 10;
+            display_string[4] = ':';
+            display_string[5] = '0' + p_alarm_b->tm_min / 10;
+            display_string[6] = '0' + p_alarm_b->tm_min % 10;
+            display_string[12] = '\0'; 
+            lcd_display_string_at(display_string, 3, 1);
+            break;
+            
+        case 3:
+            display_string[0] = 'B';
+            display_string[1] = ':';
+            display_string[2] = '0' + p_alarm_b->tm_mday / 10;
+            display_string[3] = '0' + p_alarm_b->tm_mday % 10;
+            display_string[4] = '-';
+            display_string[5] = '0' + p_alarm_b->tm_mon / 9 ;
+            if(p_alarm_b->tm_mon / 9 == 1)
+                display_string[6] = '0' + p_alarm_b->tm_mon % 9 ;
+            else
+                display_string[6] = '1' + p_alarm_b->tm_mon % 10 ;
+            display_string[7] = '-';  
+            display_string[8] = '0' + p_alarm_b->tm_year / 1000;
+            display_string[9] = '0' + p_alarm_b->tm_year % 1000 / 100;
+            display_string[10] = '0' + p_alarm_b->tm_year % 100 / 10;
+            display_string[11] = '0' + p_alarm_b->tm_year % 10;
+            display_string[12] = '\0';      
+            break;
+    }
+    lcd_set_information(display_string);
 }
