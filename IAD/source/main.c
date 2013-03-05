@@ -45,6 +45,7 @@
 #include <time.h>
 #include "rtc.h"
 #include "menu.h"
+#include "vs10xx.h"
 
 // Added by JTI2.3A4
 #include <stdbool.h>
@@ -364,6 +365,7 @@ void _main_init()
     At45dbInit();
     RcInit();
     KbInit();
+    VsPlayerInit();
     SysControlMainBeat(ON);             // enable 4.4 msecs heartbeat interrupt
 
     /*
@@ -381,7 +383,7 @@ void _main_init()
 #endif
     
     NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
-    // NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
+    NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
     NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
 }
 

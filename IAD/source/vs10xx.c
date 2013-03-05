@@ -91,8 +91,6 @@
 /*-------------------------------------------------------------------------*/
 static volatile u_char vs_status = VS_STATUS_STOPPED;
 static u_short g_vs_type;
-static u_char VsPlayMode;
-
 
 static void VsLoadProgramCode(void);
 

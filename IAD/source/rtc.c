@@ -24,6 +24,9 @@
 
 #include "rtc.h"
 #include "portio.h"
+#include "log.h"
+#include "keyboard.h"
+#include "vs10xx.h"
 
 #define I2C_SLA_RTC         0x6F
 #define I2C_SLA_EEPROM      0x57
@@ -236,6 +239,7 @@ int X12RtcGetAlarm(int idx, struct _tm *tm, int *aflgs)
         if (data[1] & X12RTC_MNA_EMN)
         {
             *aflgs |= RTC_ALARM_MINUTE;
+            data[1] = 0b01111111;
             tm->tm_min = BCD2BIN(data[1]);
         }
         if (data[2] & X12RTC_HRA_EHR)
@@ -468,4 +472,86 @@ int X12Init(void)
     return (rc);
 }
 
+/**
+ * 
+ * @param time, sets alarm A on time, in hours and minutes
+ */
+void set_alarm_a(tm* time)
+{
+    X12RtcSetAlarm(0, time, 0b00000110);
+}
 
+/**
+ * 
+ * @param gmt
+ * @return returns time set for alarm A
+ */
+tm* get_alarm_a(tm* gmt)
+{
+    int flags = 0;
+    X12RtcGetAlarm(0, gmt, &flags);
+    return gmt;
+}
+
+/**
+ * 
+ * @param time, sets alarm B on time, in years, months, days, hours and minutes
+ */
+void set_alarm_b(tm* time)
+{
+    X12RtcSetAlarm(1, time, 0b00011110);
+}
+
+/**
+ * 
+ * @param gmt
+ * @return returns time set for alarm B
+ */
+tm* get_alarm_b(tm* gmt)
+{
+    int flags = 0;
+    X12RtcGetAlarm(1, gmt, &flags);
+    return gmt;
+}
+
+void disable_alarm_b()
+{
+    tm dummy;
+    X12RtcSetAlarm(1, &dummy, 0b00000000);
+}
+
+THREAD(AlarmPollingThread, arg)
+{
+    u_long alarm_a;
+    u_long alarm_b;   
+    for(;;)
+    {      
+        X12RtcGetStatus(&alarm_a);
+        alarm_b = alarm_a;
+        alarm_a &= 0b00100000;
+
+        alarm_b &= 0b01000000;
+
+        if(alarm_a!=0)
+        {
+            VsBeep((u_char)500, 1000);              //BeepBoop, beeps with (frequency, duration)
+        }
+
+        if(alarm_b!=0)
+        {
+            VsBeep((u_char)1000, 1000);              //BeepBoop, beeps with (frequency, duration)
+        }
+
+        if(kb_button_is_pressed(KEY_ESC) && alarm_a!=0)
+        {
+            X12RtcClearStatus(0b00100000);
+        }
+
+        if(kb_button_is_pressed(KEY_ESC) && alarm_b!=0)
+        {
+            X12RtcClearStatus(0b01000000);
+            disable_alarm_b();
+        }
+        NutSleep(100);
+    }
+}
