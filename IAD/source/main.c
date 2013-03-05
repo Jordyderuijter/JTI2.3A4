@@ -73,7 +73,6 @@ void SysInitIO(void);
 static void SysControlMainBeat(u_char);
 
 void _main_init(void);
-void _handle_mainscreen_input(void);
 void _handle_settings_input(void);
 void _handle_timezone_setup_input(void);
 
@@ -95,6 +94,295 @@ void connect_to_internet(void);         // USE THESE TWO FUNCTIONS FROM inet.h A
 /*                         start of code                                   */
 /*-------------------------------------------------------------------------*/
 
+/* ����������������������������������������������������������������������� */
+/*!
+ * \brief Main entry of the SIR firmware
+ *
+ * All the initializations before entering the for(;;) loop are done BEFORE
+ * the first key is ever pressed. So when entering the Setup (POWER + VOLMIN) some
+ * initializations need to be done again when leaving the Setup because new values
+ * might be current now
+ *
+ * \return \b never returns
+ */
+/* ����������������������������������������������������������������������� */
+int main(void)
+{
+    bool is_first_startup = true;
+    
+    _main_init();
+    
+#ifdef RESET
+    At45dbPageWrite(0, &is_first_startup, 1);
+#endif
+    
+#ifndef RESET
+    // If this is the first startup EVER, show the timezone setup.
+    At45dbPageRead(0, &is_first_startup, 1);
+    
+    if(is_first_startup)
+    {
+        lcd_display_timezone_setup(); // RESETS CURSOR, NEEDS FIXING!
+        lcd_show_cursor(true);
+        input_mode = 2;
+        is_first_startup = false;
+        At45dbPageWrite(0, &is_first_startup, 1);
+    }
+#endif
+	
+    NutSleep(1000);     // Sleep is required to be able to read the ESC key below.
+    
+    if(kb_button_is_pressed(KEY_ESC))        // Go to timezone setup
+    {
+        lcd_display_timezone_setup();           // RESETS CUR SOR, NEEDS FIXING!
+        lcd_display_string_at(" 00:00\0", 10, 0); 
+        lcd_show_cursor(true);
+        input_mode = 2;
+    }
+    
+    for (;;)
+    {
+        // If a key is pressed, light up the LCD screen.
+        if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
+            lcd_backlight_on(20);
+
+        // Handle input based on the current input mode.
+        switch(input_mode)
+        {
+            case 0:
+                _handle_mainscreen_input();
+                break;
+            case 1:
+                menu_handle_settings_input(&input_mode);
+                break;
+            case 2:
+                _handle_timezone_setup_input();
+                break;
+        }
+        
+        // Mandatory main loop code.
+        WatchDogRestart();
+        NutSleep(100); 
+    }
+
+    return(0);      // never reached, but 'main()' returns a non-void, so.....
+}
+
+
+/**
+ *  Handles input in 'mainscreen mode'
+ */
+void _handle_mainscreen_input()
+{
+    if(kb_button_is_pressed(KEY_OK))               // Go to settings menu
+    {
+        lcd_display_settings_menu();
+        input_mode = 1;
+    }
+}
+
+/**
+ * Handles input in 'timezone setup mode';
+ */
+void _handle_timezone_setup_input()
+{
+    static int cursor_position = 11;            // 11 = hours, 14 = minutes.
+    static struct hm utc_offset;
+    static struct hm* p_utc_offset = &utc_offset;
+    static char display_string[7];
+    bool timezone_changed = false;
+    bool cursor_position_changed = false;
+    
+    if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen.
+    {
+        tm timestamp;
+        X12RtcGetClock(&timestamp);
+        //_correct_timestamp_with_timezone(&timestamp, utc_offset);     Can this be done trough NTP??
+        
+        // Set new time
+        timestamp.tm_hour += p_utc_offset->hm_hours;    // Is going to give problems with the day/month/years!!! (28 feb, 22:00 + 8 hours will give 28 feb 06:00?)
+        timestamp.tm_min += p_utc_offset->hm_minutes;   // Is going to give problems with the day/month/years!!!
+        
+        X12RtcSetClock(&timestamp);
+        
+        lcd_show_cursor(false);
+        input_mode = 0; // Switch input mode to mainscreen mode.
+        
+        lcd_display_main_screen();
+        
+        return;         // Since we have switched input mode we don't need to execute the other code in the function.
+    }
+    
+    // Move cursor between hours and minutes.
+    if(kb_button_is_pressed(KEY_LEFT) || kb_button_is_pressed(KEY_RIGHT))
+    {
+        if(cursor_position == 11)
+            cursor_position = 14;
+        else
+            cursor_position = 11;
+        
+        cursor_position_changed = true;
+    }
+    
+    if(cursor_position == 11)               // Position of 'ten-hours'
+    {
+        if(kb_button_is_pressed(KEY_UP))
+        {            
+            p_utc_offset->hm_hours++;
+            
+            if(p_utc_offset->hm_hours > 14)
+                p_utc_offset->hm_hours = -12;
+            timezone_changed = true;
+        }
+        else if(kb_button_is_pressed(KEY_DOWN))
+        {                      
+            p_utc_offset->hm_hours--;
+            
+            if(p_utc_offset->hm_hours < -12)
+                p_utc_offset->hm_hours = 14;
+            timezone_changed = true;
+        }
+    }
+    else        // Set the minutes in 15 minutes/button press.
+    {
+        if(kb_button_is_pressed(KEY_UP))
+        {            
+            p_utc_offset->hm_minutes += 15;
+            
+            if(p_utc_offset->hm_minutes >= 60)
+                p_utc_offset->hm_minutes = 0;
+            timezone_changed = true;
+        }
+        else if(kb_button_is_pressed(KEY_DOWN))
+        {            
+            p_utc_offset->hm_minutes -= 15;
+            
+            if(p_utc_offset->hm_minutes < 0)
+                p_utc_offset->hm_minutes = 45;
+            timezone_changed = true;
+        }
+    }
+    
+    if(p_utc_offset->hm_hours > 0)
+        display_string[0] = '+';
+    else if(p_utc_offset->hm_hours < 0)
+        display_string[0] = '-';
+    else
+        display_string[0] = ' ';
+    
+    display_string[1] = '0' + abs(p_utc_offset->hm_hours) / 10;
+    display_string[2] = '0' + abs(p_utc_offset->hm_hours) % 10;
+    display_string[3] = ':';
+    display_string[4] = '0' + p_utc_offset->hm_minutes / 10;
+    display_string[5] = '0' + p_utc_offset->hm_minutes % 10;
+    display_string[6] = '\0';
+    
+    if(timezone_changed)
+    {
+        lcd_display_string_at(display_string, 10, 0);      
+    }
+    if(cursor_position_changed)
+    {
+        lcd_place_cursor_at(cursor_position, 0);
+    }
+}
+
+// USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
+tm* get_ntp_time(float timezone_offset)
+{
+    time_t ntp_time = 0;
+    tm *ntp_datetime;
+    uint32_t timeserver = 0;
+    
+    _timezone = -1 * 60 * 60;
+ 
+    puts("Retrieving time");
+ 
+    timeserver = inet_addr("193.67.79.202");
+ 
+        if (NutSNTPGetTime(&timeserver, &ntp_time) == 0) {
+            
+        } else {
+            NutSleep(1000);
+            puts("Failed to retrieve time.");
+        }
+    ntp_datetime = localtime(&ntp_time);
+    //printf("NTP time is: %02d:%02d:%02d\n", ntp_datetime->tm_hour, ntp_datetime->tm_min, ntp_datetime->tm_sec);
+    return ntp_datetime;
+}
+
+// USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
+void connect_to_internet()
+{
+    u_long baud = 115200;
+ 
+    NutRegisterDevice(&DEV_DEBUG, 0, 0);
+    freopen(DEV_DEBUG_NAME, "w", stdout);
+    _ioctl(_fileno(stdout), UART_SETSPEED, &baud);
+    puts("Network Configuration...");
+ 
+    if (NutRegisterDevice(&DEV_ETHER, 0, 0)) {
+        puts("Registering " DEV_ETHER_NAME " failed.");
+    }
+    else if (NutDhcpIfConfig(DEV_ETHER_NAME, NULL, 0)) {
+        puts("Configuring " DEV_ETHER_NAME " failed.");
+    }
+    else {
+        printf(inet_ntoa(confnet.cdn_ip_addr));
+    }
+}
+
+/**
+ * Do all initializations that were previously done in the main function itself.
+ */
+void _main_init()
+{
+    tm gmt;     // Used to LOG the time.
+    
+    /*
+     *  First disable the watchdog
+     */
+    WatchDogDisable();
+
+    NutDelay(100);
+
+    SysInitIO();
+    SPIinit();
+    LedInit();
+    LcdLowLevelInit();
+    Uart0DriverInit();
+    Uart0DriverStart();
+    LogInit();
+    LogMsg_P(LOG_INFO, PSTR("Application now running"));
+    CardInit();
+    X12Init();
+    if (X12RtcGetClock(&gmt) == 0)
+    {
+		LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
+    }
+    At45dbInit();
+    RcInit();
+    KbInit();
+    SysControlMainBeat(ON);             // enable 4.4 msecs heartbeat interrupt
+
+    /*
+     * Increase our priority so we can feed the watchdog.
+     */
+    NutThreadSetPriority(1);
+
+    /* Enable global interrupts */
+    sei();
+    
+#ifdef USE_INTERNET
+    connect_to_internet();
+    ptime = get_ntp_time(0.0);
+    LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
+#endif
+    
+    NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
+    // NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
+    NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
+}
 
 /* ����������������������������������������������������������������������� */
 /*!
@@ -206,294 +494,6 @@ static void SysControlMainBeat(u_char OnOff)
     {
         // disable overflow interrupt
         disable_8_bit_timer_ovfl_int();
-    }
-}
-
-/* ����������������������������������������������������������������������� */
-/*!
- * \brief Main entry of the SIR firmware
- *
- * All the initializations before entering the for(;;) loop are done BEFORE
- * the first key is ever pressed. So when entering the Setup (POWER + VOLMIN) some
- * initializations need to be done again when leaving the Setup because new values
- * might be current now
- *
- * \return \b never returns
- */
-/* ����������������������������������������������������������������������� */
-int main(void)
-{
-    bool is_first_startup = true;
-    
-    _main_init();
-    
-#ifdef RESET
-    At45dbPageWrite(0, &is_first_startup, 1);
-#endif
-    
-#ifndef RESET
-    // If this is the first startup EVER, show the timezone setup.
-    At45dbPageRead(0, &is_first_startup, 1);
-    
-    if(is_first_startup)
-    {
-        lcd_display_timezone_setup(); // RESETS CURSOR, NEEDS FIXING!
-        lcd_show_cursor(true);
-        input_mode = 2;
-        is_first_startup = false;
-        At45dbPageWrite(0, &is_first_startup, 1);
-    }
-#endif
-    
-    for (;;)
-    {
-        // If a key is pressed, light up the LCD screen.
-        if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
-            lcd_backlight_on(6);
-
-        // Handle input based on the current input mode.
-        switch(input_mode)
-        {
-            case 0:
-                _handle_mainscreen_input();
-                break;
-            case 1:
-                _handle_settings_input();
-                break;
-            case 2:
-                _handle_timezone_setup_input();
-                break;
-        }
-        
-        // Mandatory main loop code.
-        WatchDogRestart();
-        NutSleep(100); 
-    }
-
-    return(0);      // never reached, but 'main()' returns a non-void, so.....
-}
-
-/**
- * Do all initializations that were previously done in the main function itself.
- */
-void _main_init()
-{
-    tm gmt;     // Used to LOG the time.
-    
-    /*
-     *  First disable the watchdog
-     */
-    WatchDogDisable();
-
-    NutDelay(100);
-
-    SysInitIO();
-    SPIinit();
-    LedInit();
-    LcdLowLevelInit();
-    Uart0DriverInit();
-    Uart0DriverStart();
-    LogInit();
-    LogMsg_P(LOG_INFO, PSTR("Application now running"));
-    CardInit();
-    X12Init();
-    if (X12RtcGetClock(&gmt) == 0)
-    {
-		LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
-    }
-    At45dbInit();
-    RcInit();
-    KbInit();
-    SysControlMainBeat(ON);             // enable 4.4 msecs heartbeat interrupt
-
-    /*
-     * Increase our priority so we can feed the watchdog.
-     */
-    NutThreadSetPriority(1);
-
-    /* Enable global interrupts */
-    sei();
-    
-    //connect_to_internet();
-    //ptime = get_ntp_time(0.0);
-    //LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
-    
-    NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
-    // NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
-    NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
-}
-
-/**
- *  Handles input in 'mainscreen mode'
- */
-void _handle_mainscreen_input()
-{
-    if(kb_button_is_pressed(KEY_ESC) && kb_button_is_pressed(KEY_POWER))        // Go to timezone setup
-    {
-        lcd_display_string_at("Timezone: ", 0, 0);
-        lcd_show_cursor(true);
-        input_mode = 2;
-    }
-    else if(kb_button_is_pressed(KEY_OK))               // Go to settings menu
-    {
-        //lcd_display_settings_menu();
-        input_mode = 1;
-    }
-    //else if(kb_button_is_pressed(KEY_UP))             // Display previous information item
-        //Display previous information item here.
-    //else if(kb_button_is_pressed(KEY_DOWN))           // Display next information item
-        // Display next information item here.
-}
-
-/**
- * Handles input in 'settings menu mode'.
- */
-void _handle_settings_input()
-{
-    // USE "MENU_SETTINGS_HANDLE_INPUT(key)" or something similar??
-    
-    // Handle settings menu input
-        if(kb_button_is_pressed(KEY_UP))
-            menu_settings_previous_item();
-        else if(kb_button_is_pressed(KEY_DOWN))
-            menu_settings_next_item();
-        //else if(menu_get_current_menu_item() == 0 && kb_button_is_pressed(KEY_01))         // This can probably be done more efficient.
-        // Change value of alarm A time.
-}
-
-/**
- * Handles input in 'timezone setup mode';
- */
-void _handle_timezone_setup_input()
-{
-    static u_short time_cursor_position = 0;
-    static u_short utc_offset = 0;
-
-    if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen.
-    {
-        tm timestamp;
-        X12RtcGetClock(&timestamp);
-        //_correct_timestamp_with_timezone(&timestamp, utc_offset);     Can this be done trough NTP??
-        timestamp.tm_hour += utc_offset;
-        X12RtcSetClock(&timestamp);
-        
-        lcd_show_cursor(false);
-        input_mode = 0; // Switch input mode to mainscreen mode.
-        
-        // Clear display/show mainscreen here!?
-        
-        return;         // Since we have switched input mode we don't need to execute the other code in the function.
-    }
-    
-    if(kb_button_is_pressed(KEY_LEFT))
-    {
-        if(time_cursor_position - 1 == -1)      // Use this check, we're using an UNSIGNED short here.
-           time_cursor_position = 3;
-        else
-                time_cursor_position--;
-
-        //lcd_place_cursor_at(/*Previous Position*/, 0);
-    }
-    else if(kb_button_is_pressed(KEY_RIGHT))
-    {
-        time_cursor_position++;
-        
-        if(time_cursor_position == 4)
-            time_cursor_position = 0;
-        
-        //lcd_place_cursor_at(/*Next Position*/, 0);
-    }
-    
-    if(time_cursor_position == 0)               // Position of 'ten-hours'
-    {
-        if(kb_button_is_pressed(KEY_01))
-            utc_offset = 10 + utc_offset % 10;
-        else if(kb_button_is_pressed(KEY_02))
-                utc_offset = 2 + utc_offset % 10;
-    }
-    else if(time_cursor_position == 1)
-    {
-        if(kb_button_is_pressed(KEY_01))
-        {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 1;
-            
-            if(kb_button_is_pressed(KEY_ALT))
-                    utc_offset += 5;
-        }
-        else if(kb_button_is_pressed(KEY_02))
-        {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 2;
-            
-            if(kb_button_is_pressed(KEY_ALT))
-                utc_offset += 5;
-        }
-        else if(kb_button_is_pressed(KEY_03))
-        {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 3;
-            
-            if(kb_button_is_pressed(KEY_ALT))
-                utc_offset += 5;
-        }
-         else if(kb_button_is_pressed(KEY_04))
-         {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 4;
-            if(kb_button_is_pressed(KEY_ALT))
-                utc_offset += 5;
-         }
-        else if(kb_button_is_pressed(KEY_05))
-        {
-            utc_offset = (((u_short)utc_offset / 10) * 10) + 5;
-         
-        if(kb_button_is_pressed(KEY_ALT))
-            utc_offset = (((u_short)utc_offset / 10) * 10);
-        }
-    }
-     
-     // Display value here.
-}
-
-// USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
-tm* get_ntp_time(float timezone_offset)
-{
-    time_t ntp_time = 0;
-    tm *ntp_datetime;
-    uint32_t timeserver = 0;
-    
-    _timezone = -1 * 60 * 60;
- 
-    puts("Retrieving time");
- 
-    timeserver = inet_addr("193.67.79.202");
- 
-        if (NutSNTPGetTime(&timeserver, &ntp_time) == 0) {
-            
-        } else {
-            NutSleep(1000);
-            puts("Failed to retrieve time.");
-        }
-    ntp_datetime = localtime(&ntp_time);
-    //printf("NTP time is: %02d:%02d:%02d\n", ntp_datetime->tm_hour, ntp_datetime->tm_min, ntp_datetime->tm_sec);
-    return ntp_datetime;
-}
-
-// USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
-void connect_to_internet()
-{
-    u_long baud = 115200;
- 
-    NutRegisterDevice(&DEV_DEBUG, 0, 0);
-    freopen(DEV_DEBUG_NAME, "w", stdout);
-    _ioctl(_fileno(stdout), UART_SETSPEED, &baud);
-    puts("Network Configuration...");
- 
-    if (NutRegisterDevice(&DEV_ETHER, 0, 0)) {
-        puts("Registering " DEV_ETHER_NAME " failed.");
-    }
-    else if (NutDhcpIfConfig(DEV_ETHER_NAME, NULL, 0)) {
-        puts("Configuring " DEV_ETHER_NAME " failed.");
-    }
-    else {
-        printf(inet_ntoa(confnet.cdn_ip_addr));
     }
 }
 

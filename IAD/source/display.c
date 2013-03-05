@@ -64,6 +64,7 @@ void _display_main_screen(void);
 void lcd_display_timezone_setup(void);
 void _display_timezone_setup(void);
 void lcd_show_cursor(bool value);
+int lcd_place_cursor_at(int x, int y);
 
 
 /*!
@@ -411,9 +412,6 @@ void lcd_display_settings_menu()
 {
     lcd_clear();
     display_mode = 1;
-    // Enable cursor blinking
-    lcd_show_cursor(true);
-    // Don't forget to turn cursor blinking off when whiching display mode!
 }
 
 /**
@@ -421,7 +419,12 @@ void lcd_display_settings_menu()
  */
 void _display_main_screen()
 {
-    display_mode = 0;
+    // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
+    static tm time_stamp;
+    
+    X12RtcGetClock(&time_stamp);
+    lcd_display_timestamp(&time_stamp);
+    
     // Display radio/RSS info here.
 }
 
@@ -445,9 +448,25 @@ void _display_timezone_setup()
 void lcd_show_cursor(bool value)
 {
     if(value)
-        LcdWriteByte(WRITE_COMMAND, 0x0E);  // 0E: underline cursor. Or: 0F for block cursor
+        LcdWriteByte(WRITE_COMMAND, 0x0F);  // 0E: underline cursor. Or: 0F for block cursor
     else
         LcdWriteByte(WRITE_COMMAND, 0x0C);
+}
+
+/**
+ * Place cursor at the given position.
+ * @param The x-coordinate on the display (0-15)
+ * @param The y-coordinate on the display (0-1)
+ * @return 0 on success, -1 on failure
+ */
+int lcd_place_cursor_at(int x, int y)
+{
+    if(x < 0 || x > 15 || y < 0 || y > 1)
+        return -1;
+    
+    LcdWriteByte(WRITE_COMMAND, 0x80 + (y * 64) + x );          // DD-RAM address counter (cursor pos) to the requested position.
+    
+    return 0;
 }
 
 
