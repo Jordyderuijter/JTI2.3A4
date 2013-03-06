@@ -17,7 +17,8 @@
 
 //#define RESET   // If defined, this will reset the 'first time setup status'.
                 //Should only be used when uploading code without this defined immediately afterwards!!
-
+//#define USE_INTERNET  // If defined, this will enable NTP synchronization. Should always be defined in final 'production' code.
+                        // Only comment when testing without access to an internet connection!
 /*--------------------------------------------------------------------------*/
 /*  Include files                                                           */
 /*--------------------------------------------------------------------------*/
