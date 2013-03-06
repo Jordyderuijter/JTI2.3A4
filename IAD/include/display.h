@@ -67,7 +67,6 @@ extern void lcd_display_main_screen(void);
 extern void lcd_display_settings_menu(void);
 extern void _display_main_screen(void);
 extern void lcd_display_timezone_setup(void);
-extern void _display_timezone_setup(void);
 extern void lcd_show_cursor(bool);
 extern int lcd_place_cursor_at(int x, int y);
 

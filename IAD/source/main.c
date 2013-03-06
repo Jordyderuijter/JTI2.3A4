@@ -120,33 +120,40 @@ int main(void)
 #ifndef RESET
     // If this is the first startup EVER, show the timezone setup.
     At45dbPageRead(0, &is_first_startup, 1);
-    
-    if(is_first_startup)
+    NutSleep(1000);     // Sleep is required to be able to read the ESC key below.
+    if(kb_button_is_pressed(KEY_ESC) || is_first_startup)        // Go to timezone setup
     {
-        lcd_display_timezone_setup(); // RESETS CURSOR, NEEDS FIXING!
+        lcd_display_timezone_setup();           // RESETS CUR SOR, NEEDS FIXING!     
         lcd_show_cursor(true);
         input_mode = 2;
-        is_first_startup = false;
-        At45dbPageWrite(0, &is_first_startup, 1);
+        if(is_first_startup)
+        {
+            is_first_startup = false;
+            At45dbPageWrite(0, &is_first_startup, 1);
+        }
     }
 #endif
-	
-    NutSleep(1000);     // Sleep is required to be able to read the ESC key below.
     
-    if(kb_button_is_pressed(KEY_ESC))        // Go to timezone setup
+    //Stay in startup screen and don't start threads yet.
+    while(input_mode == 2)
     {
-        lcd_display_timezone_setup();           // RESETS CUR SOR, NEEDS FIXING!
-        lcd_display_string_at(" 00:00\0", 10, 0); 
-        lcd_show_cursor(true);
-        input_mode = 2;
+        NutSleep(200);
+        _handle_timezone_setup_input();
+        // If a key is pressed, light up the LCD screen.
+        if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
+            lcd_backlight_on(20);
     }
     
+    NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
+    NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
+    NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
+        
     for (;;)
     {
         // If a key is pressed, light up the LCD screen.
         if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
             lcd_backlight_on(20);
-
+        
         // Handle input based on the current input mode.
         switch(input_mode)
         {
@@ -154,11 +161,7 @@ int main(void)
                 _handle_mainscreen_input();
                 break;
             case 1:
-                lcd_set_information("");
                 menu_handle_settings_input(&input_mode);
-                break;
-            case 2:
-                _handle_timezone_setup_input();
                 break;
         }
         
@@ -192,7 +195,6 @@ void _handle_timezone_setup_input()
     static struct hm utc_offset;
     static struct hm* p_utc_offset = &utc_offset;
     static char display_string[7];
-    bool timezone_changed = false;
     bool cursor_position_changed = false;
     
     if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen.
@@ -221,9 +223,8 @@ void _handle_timezone_setup_input()
         if(cursor_position == 11)
             cursor_position = 14;
         else
-            cursor_position = 11;
-        
-        cursor_position_changed = true;
+            cursor_position = 11;       
+        lcd_place_cursor_at(cursor_position, 0);
     }
     
     if(cursor_position == 11)               // Position of 'ten-hours'
@@ -234,7 +235,7 @@ void _handle_timezone_setup_input()
             
             if(p_utc_offset->hm_hours > 14)
                 p_utc_offset->hm_hours = -12;
-            timezone_changed = true;
+            lcd_display_string_at(display_string, 10, 0);  
         }
         else if(kb_button_is_pressed(KEY_DOWN))
         {                      
@@ -242,7 +243,7 @@ void _handle_timezone_setup_input()
             
             if(p_utc_offset->hm_hours < -12)
                 p_utc_offset->hm_hours = 14;
-            timezone_changed = true;
+            lcd_display_string_at(display_string, 10, 0);  
         }
     }
     else        // Set the minutes in 15 minutes/button press.
@@ -253,7 +254,7 @@ void _handle_timezone_setup_input()
             
             if(p_utc_offset->hm_minutes >= 60)
                 p_utc_offset->hm_minutes = 0;
-            timezone_changed = true;
+            lcd_display_string_at(display_string, 10, 0);  
         }
         else if(kb_button_is_pressed(KEY_DOWN))
         {            
@@ -261,7 +262,7 @@ void _handle_timezone_setup_input()
             
             if(p_utc_offset->hm_minutes < 0)
                 p_utc_offset->hm_minutes = 45;
-            timezone_changed = true;
+            lcd_display_string_at(display_string, 10, 0);  
         }
     }
     
@@ -279,10 +280,7 @@ void _handle_timezone_setup_input()
     display_string[5] = '0' + p_utc_offset->hm_minutes % 10;
     display_string[6] = '\0';
     
-    if(timezone_changed)
-    {
-        lcd_display_string_at(display_string, 10, 0);      
-    }
+   
     if(cursor_position_changed)
     {
         lcd_place_cursor_at(cursor_position, 0);
@@ -381,10 +379,6 @@ void _main_init()
     ptime = get_ntp_time(0.0);
     LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
 #endif
-    
-    NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
-    NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
-    NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
 }
 
 /* ����������������������������������������������������������������������� */

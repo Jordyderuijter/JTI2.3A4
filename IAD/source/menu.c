@@ -20,20 +20,6 @@ void menu_handle_settings_input(u_short* input_mode);
 void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooze_interval, int menu_item);
 
 /**
- * Opens the settings menu.
- */
-void menu_show_settings()
-{
-    // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
-    static tm time_stamp;
-    if(menu_item < 0)
-        menu_item = 0;
-    
-    X12RtcGetClock(&time_stamp);
-    lcd_display_timestamp(&time_stamp);
-}
-
-/**
  * Show the next menu item.
  */
 void menu_settings_next_item()
@@ -289,7 +275,7 @@ void menu_handle_settings_input(u_short* input_mode)
 
 void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooze_interval, int menu_item)
 {
-    char display_string[] = "             ";
+    char display_string[13];
     switch(menu_item)
     {
         case 0:
@@ -301,7 +287,6 @@ void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooz
             display_string[5] = '0' + p_alarm_a->hm_minutes / 10;
             display_string[6] = '0' + p_alarm_a->hm_minutes % 10;
             display_string[12] = '\0';
-            lcd_display_string_at(display_string, 3, 1);
             break;
     
         case 1:
@@ -316,8 +301,9 @@ void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooz
             display_string[8] = '0' + snooze_interval %100 / 10;
             display_string[9] = '0' + snooze_interval %10;    
             display_string[10] = 'm';
-            display_string[12] = '\0';
-            lcd_display_string_at(display_string, 8, 1);
+            display_string[11] = 'i';
+            display_string[12] = 'm';
+            display_string[13] = '\0';         
             break;
          
         case 2:
@@ -329,7 +315,6 @@ void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooz
             display_string[5] = '0' + p_alarm_b->tm_min / 10;
             display_string[6] = '0' + p_alarm_b->tm_min % 10;
             display_string[12] = '\0'; 
-            lcd_display_string_at(display_string, 3, 1);
             break;
             
         case 3:

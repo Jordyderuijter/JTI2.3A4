@@ -39,7 +39,7 @@
 static int display_mode = 0;                // The current display mode. 0=Main, 1=Settings menu, 2=timezone setup
 static int lcd_backlight_time = 0;          // Used for temporarily lighting up the display. (time in ~500ms/half seconds)
 static int offset = 0;                      // The offset of the information scrolling.
-static char information[] = "Testcode";             // The information displayed on the LCD screen.
+static char information[] = "Start-------Einde";             // The information displayed on the LCD screen.
 
 /*-------------------------------------------------------------------------*/
 /* local routines (prototyping)                                            */
@@ -62,7 +62,6 @@ void lcd_display_main_screen(void);
 void lcd_display_settings_menu(void);
 void _display_main_screen(void);
 void lcd_display_timezone_setup(void);
-void _display_timezone_setup(void);
 void lcd_show_cursor(bool value);
 int lcd_place_cursor_at(int x, int y);
 
@@ -348,25 +347,21 @@ void lcd_display_alarmstatus(bool alarmA, bool alarmB)
  */
 void lcd_display_information()
 {
-    int information_size = strlen(information)+2;
+    int information_size = strlen(information);
     char visibleString[14];
-    
+    static int t = 0;
     //If "information" is longer than 13 characters it won't fit on the screen, so it will be scrolled.
     if(information_size > 13)
     {    
+        if(t == 10)
+        {
+        t=0;
         int i;                   
         for(i = 0; i < 13; i++)
         {
             if(!(i+offset >= information_size-1)) //End of string not reached yet.
             {           
-                if(information[i + offset] == '\0') //If the last char of the string has been reached, display a slash.
-                {
-                    visibleString[i] = '/';  
-                }
-                else                                //If the last char of the string has not been reached, just display the char.
-                {
-                    visibleString[i] = information[i + offset];
-                }
+                visibleString[i] = information[i + offset];
             }
             else                                    //End of string reached.
             {                                    
@@ -381,11 +376,13 @@ void lcd_display_information()
         {
             offset = 0;
         }
+        }
     }
-    else
+    else 
     {
         lcd_display_string_at(information, 0, 1);
     }
+    t++;
 }
 
 /*
@@ -415,35 +412,15 @@ void lcd_display_settings_menu()
 }
 
 /**
- * Shows the main screen (radio/rss information)
- */
-void _display_main_screen()
-{
-    // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
-    static tm time_stamp;
-    
-    X12RtcGetClock(&time_stamp);
-    lcd_display_timestamp(&time_stamp);
-    
-    // Display radio/RSS info here.
-}
-
-/**
  * Shows the timezone setup screen.
  */
 void lcd_display_timezone_setup()
 {
     lcd_clear();
     display_mode = 2;
+    lcd_display_string_at("Timezone:  00:00\0", 0, 0);
 }
 
-/**
- * Shows the timezone setup.
- */
-void _display_timezone_setup()
-{
-    lcd_display_string_at("Timezone: ",0,0);
-}
 
 void lcd_show_cursor(bool value)
 {
@@ -494,21 +471,7 @@ THREAD(DisplayThread, arg)
         if(lcd_backlight_time == 0)
             LcdBackLight(LCD_BACKLIGHT_OFF);
         else
-            lcd_backlight_time--;   // Decrease the backlight 'timer'.
-        
-        // Display the 'variable' information at each update, based on the value of display_mode.
-        switch(display_mode)
-        {
-            case 0:
-                _display_main_screen();
-                break;
-            case 1:
-                menu_show_settings();
-                break;
-            case 2:
-                _display_timezone_setup();
-                break;
-        }
+            lcd_backlight_time--;   // Decrease the backlight 'timer'.  
         
         NutSleep(500);
     }
@@ -522,7 +485,7 @@ THREAD(InformationThread, arg)
 {	
     for(;;)
     {    
-        NutSleep(500);
+        NutSleep(50);
         lcd_display_information(); //Display the information on the left bottom of the screen.    
     }
 }
