@@ -297,6 +297,23 @@ void _main_init()
 
     /* Enable global interrupts */
     sei();
+    
+        //mijnshit
+    //    Set time
+    gmt.tm_hour=11;
+    gmt.tm_min=36;
+    gmt.tm_sec=55;
+    gmt.tm_mday=19;
+    gmt.tm_mon=02;
+    gmt.tm_year=113;
+    
+    X12RtcSetClock(&gmt);
+
+    //  Set alarm A
+    gmt.tm_hour=11;
+    gmt.tm_min=37;
+    
+    set_alarm_a(&gmt);
  
     int t = 0;
     
@@ -310,10 +327,14 @@ void _main_init()
             alarm_a &= 0b00100000;
             
             alarm_b &= 0b01000000;
+            
+            X12RtcGetClock(&gmt);
+            LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
                     
             if(alarm_a!=0)
             {
                 VsBeep(500, 1000);              //BeepBoop, beeps with (frequency, duration)
+                LogMsg_P(LOG_INFO, PSTR("ALAAAARM!!"));
             }
 
             if(alarm_b!=0)
@@ -330,6 +351,15 @@ void _main_init()
             {
                 X12RtcClearStatus(0b01000000);
                 disable_alarm_b();
+            }
+            
+            if(kb_button_is_pressed(KEY_ALT) && alarm_a!=0)
+            {
+                X12RtcClearStatus(0b00100000);
+                gmt.tm_min+=1;
+                At45dbPageWrite(2, &gmt, 2);
+                X12RtcSetAlarm(0, &gmt, 0);
+                LogMsg_P(LOG_INFO, PSTR("ALARM A [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
             }
         }
     }
