@@ -14,7 +14,6 @@
  *              read/write date/time/status strings from the X1205
  * ======================================================================== */
 #include <time.h>           // for tm-struct
-#include "menu.h"               // for hm-struct, because pro-gramming.
                             //
 /*! \name Non-Volatile Alarm Registers */
 /*@{*/
@@ -138,6 +137,7 @@
  * \brief Convert binary to binary coded decimal value.
  */
 #define BIN2BCD(x) (((((u_char)(x)) / 10) << 4) + (x) % 10)
+
 
 /* Prototypes */
 extern int X12Init(void);

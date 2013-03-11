@@ -119,11 +119,9 @@ int main(void)
 #endif
     
 #ifndef RESET
-    
     // If this is the first startup EVER, show the timezone setup.
     At45dbPageRead(0, &is_first_startup, 1);
     NutSleep(1000);     // Sleep is required to be able to read the ESC key below.
-    
     if(kb_button_is_pressed(KEY_ESC) || is_first_startup)        // Go to timezone setup
     {
         lcd_display_timezone_setup();           // RESETS CUR SOR, NEEDS FIXING!     
@@ -142,7 +140,6 @@ int main(void)
     {
         NutSleep(200);
         _handle_timezone_setup_input();
-        
         // If a key is pressed, light up the LCD screen.
         if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
             lcd_backlight_on(20);
@@ -211,8 +208,6 @@ void _handle_timezone_setup_input()
         timestamp.tm_min += p_utc_offset->hm_minutes;   // Is going to give problems with the day/month/years!!!
         
         X12RtcSetClock(&timestamp);
-        
-        At45dbPageWrite(1, p_utc_offset, sizeof(utc_offset));
         
         lcd_show_cursor(false);
         input_mode = 0; // Switch input mode to mainscreen mode.
