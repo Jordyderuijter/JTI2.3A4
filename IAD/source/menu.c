@@ -73,223 +73,239 @@ void menu_handle_settings_input(u_short* input_mode)
         button_cooldown_counter = 0;
     }
     
-    if(kb_button_is_pressed(KEY_ESC) && !in_edit_mode && !button_cooldown)
+    if(!button_cooldown)
     {
-        button_cooldown = true;
-        *input_mode = 0;
-        lcd_set_information("             "); //RSS / Radio information should be shown here.        
-        lcd_show_cursor(false);
-        
-        lcd_display_main_screen();
-        menu_item = 0;
-        
-        return;
-    }
-    else if(kb_button_is_pressed(KEY_OK) && !button_cooldown)
-    {         
-        if(in_edit_mode)
+        switch(kb_button_pressed())
         {
-            switch (menu_item)
-            {
-                case 0: 
-                    set_alarm_a(p_alarm_a);
-                    break;
-                case 2:
-                case 3:
-                    set_alarm_b(p_alarm_b);
-                    break;
-            }
-        }
-        button_cooldown = true;
-        in_edit_mode = !in_edit_mode;
-        lcd_show_cursor(in_edit_mode);
-    }
-    else if(kb_button_is_pressed(KEY_UP) && !button_cooldown)
-    {
-        button_cooldown = true;
-        if(menu_item == 0 && in_edit_mode)
-        {
-            if(cursor_position == 3)
-            {
-                p_alarm_a->tm_hour++;
+            case KEY_ESC:       
+                if(!in_edit_mode)
+                {
+                    *input_mode = 0;
+                    lcd_set_information("             "); //RSS / Radio information should be shown here.        
+                    lcd_display_main_screen();
+                    menu_item = 0;
+                    return;
+                }
+                break;
+            
+            case KEY_OK:             
+                if(in_edit_mode)
+                {
+                    switch (menu_item)
+                    {
+                        case 0: 
+                            set_alarm_a(p_alarm_a);
+                            break;
+                        case 2:
+                        case 3:
+                            set_alarm_b(p_alarm_b);
+                            break;
+                    }
+                }
+                in_edit_mode = !in_edit_mode;
+                lcd_show_cursor(in_edit_mode);
+                break;
                 
-                if(p_alarm_a->tm_hour > 23)
-                    p_alarm_a->tm_hour = 0;
-            }
-            else
-            {
-                p_alarm_a->tm_min++;
-                
-                if(p_alarm_a->tm_min > 59)
-                    p_alarm_a->tm_min = 0;
-            }
-        }
-        else if(menu_item == 1 && in_edit_mode)
-        {    
-            snooze_interval++;
-            if(snooze_interval > 120)
-                snooze_interval = 0;
-        }
-        else if(menu_item == 2 && in_edit_mode)
-        {
-            if(cursor_position == 3)
-            {
-                p_alarm_b->tm_hour++;
-                
-                if(p_alarm_b->tm_hour > 23)
-                    p_alarm_b->tm_hour = 0;
-            }
-            else
-            {
-                p_alarm_b->tm_min++;
-                
-                if(p_alarm_b->tm_min > 59)
-                    p_alarm_b->tm_min = 0;
-            }
-        }
-        else if(menu_item == 3 && in_edit_mode)
-        {
-            if(cursor_position == 3)
-            {
-                p_alarm_b->tm_mday++;              
-                if(p_alarm_b->tm_mday > 31)
-                    p_alarm_b->tm_mday = 0;
-            }
-            else if(cursor_position == 6)
-            {
-                p_alarm_b->tm_mon++;           
-                if(p_alarm_b->tm_mon > 11)
-                    p_alarm_b->tm_mon = 0;
-            }
-            else 
-            {
-                p_alarm_b->tm_year++; 
-            }
-        } 
-        else
-        {
-            cursor_position = 3;  
-            menu_settings_previous_item();
-        }
-           
-    }
-    else if(kb_button_is_pressed(KEY_DOWN) && !button_cooldown)
-    {
-        button_cooldown = true;
-        if(menu_item == 0 && in_edit_mode)
-        {
-            if(cursor_position == 3)
-            {
-                p_alarm_a->tm_hour--;
-                
-                if(p_alarm_a->tm_hour < 0)
-                    p_alarm_a->tm_hour = 23;
-            }
-            else
-            {
-                p_alarm_a->tm_min--;
-                
-                if(p_alarm_a->tm_min< 0)
-                    p_alarm_a->tm_min = 59;
-            }
-        }
-        else if(menu_item == 1 && in_edit_mode)
-        {       
-            snooze_interval--;
-            if(snooze_interval < 0)
-                snooze_interval = 120;
-        }
-        else if(menu_item == 2 && in_edit_mode)
-        {
-            if(cursor_position == 3)
-            {
-                p_alarm_b->tm_hour--;              
-                if(p_alarm_b->tm_hour < 0)
-                    p_alarm_b->tm_hour = 23;
-            }
-            else
-            {
-                p_alarm_b->tm_min--;       
-                if(p_alarm_b->tm_min < 0)
-                    p_alarm_b->tm_min = 59;
-            }
-        }
-        else if(menu_item == 3 && in_edit_mode)
-        {
-            if(cursor_position == 3)
-            {
-                p_alarm_b->tm_mday--;              
-                if(p_alarm_b->tm_mday < 1)
-                    p_alarm_b->tm_mday = 31;
-            }
-            else if(cursor_position == 6)
-            {
-                p_alarm_b->tm_mon--;           
-                if(p_alarm_b->tm_mon < 0)
-                    p_alarm_b->tm_mon = 11;
-            }
-            else 
-            {
-                p_alarm_b->tm_year--;          
-            }
-        }
-        else
-        {
-            cursor_position = 3;
-            menu_settings_next_item();
-        }
-    }
-    else if(kb_button_is_pressed(KEY_LEFT) && !button_cooldown)
-    {
-        button_cooldown = true;
-        switch(menu_item)
-        {
-            case 0:  
-            case 2:
-                if(cursor_position == 3)
-                    cursor_position = 6;
+            case KEY_UP:      
+                if(in_edit_mode)
+                {
+                    switch(menu_item)
+                    {
+                        case 0:                     
+                            if(cursor_position == 3)
+                            {
+                                p_alarm_a->tm_hour++;
+
+                                if(p_alarm_a->tm_hour > 23)
+                                    p_alarm_a->tm_hour = 0;
+                            }
+                            else
+                            {
+                                p_alarm_a->tm_min++;
+
+                                if(p_alarm_a->tm_min > 59)
+                                    p_alarm_a->tm_min = 0;
+                            }
+                            break;
+                            
+                        case 1:                      
+                            snooze_interval++;
+                            if(snooze_interval > 120)
+                                snooze_interval = 0;
+                            break;
+                            
+                        case 2:                   
+                            if(cursor_position == 3)
+                            {
+                                p_alarm_b->tm_hour++;
+
+                                if(p_alarm_b->tm_hour > 23)
+                                    p_alarm_b->tm_hour = 0;
+                            }
+                            else
+                            {
+                                p_alarm_b->tm_min++;
+
+                                if(p_alarm_b->tm_min > 59)
+                                    p_alarm_b->tm_min = 0;
+                            }
+                            break;
+                            
+                        case 3:
+                            if(cursor_position == 3)
+                            {
+                                p_alarm_b->tm_mday++;              
+                                if(p_alarm_b->tm_mday > 31)
+                                    p_alarm_b->tm_mday = 0;
+                            }
+                            else if(cursor_position == 6)
+                            {
+                                p_alarm_b->tm_mon++;           
+                                if(p_alarm_b->tm_mon > 11)
+                                    p_alarm_b->tm_mon = 0;
+                            }
+                            else 
+                            {
+                                p_alarm_b->tm_year++; 
+                            }
+                            break;
+                            
+                        default:
+                            break;                     
+                    }
+                }
                 else
-                    cursor_position = 3;
+                {
+                    cursor_position = 3;  
+                    menu_settings_previous_item();
+                }  
                 break;
-            case 3:
-                if(cursor_position == 3)
-                    cursor_position = 11;
-                else if(cursor_position == 11)
-                    cursor_position = 6;
-                else 
-                    cursor_position = 3;
-                break;
-        }
-    }
-    else if(kb_button_is_pressed(KEY_RIGHT) && !button_cooldown)
-    {
-        button_cooldown = true;     
-        switch(menu_item)
-        {
-            case 0:                             // Alarm A time
-            case 2:                             // Alarm B time
-                if(cursor_position == 3)
-                    cursor_position = 6;
+                
+            case KEY_DOWN:   
+                if(in_edit_mode)
+                {
+                    switch(menu_item)
+                    {
+                        case 0:
+                            if(cursor_position == 3)
+                            {
+                                p_alarm_a->tm_hour--;
+
+                                if(p_alarm_a->tm_hour < 0)
+                                    p_alarm_a->tm_hour = 23;
+                            }
+                            else
+                            {
+                                p_alarm_a->tm_min--;
+
+                                if(p_alarm_a->tm_min< 0)
+                                    p_alarm_a->tm_min = 59;
+                            }
+                            break;
+                            
+                        case 1:     
+                            snooze_interval--;
+                            if(snooze_interval < 0)
+                                snooze_interval = 120;
+                            break;
+                            
+                        case 2:     
+                            if(cursor_position == 3)
+                            {
+                                p_alarm_b->tm_hour--;              
+                                if(p_alarm_b->tm_hour < 0)
+                                    p_alarm_b->tm_hour = 23;
+                            }
+                            else
+                            {
+                                p_alarm_b->tm_min--;       
+                                if(p_alarm_b->tm_min < 0)
+                                    p_alarm_b->tm_min = 59;
+                            }
+                            break;
+                            
+                        case 3:     
+                            if(cursor_position == 3)
+                            {
+                                p_alarm_b->tm_mday--;              
+                                if(p_alarm_b->tm_mday < 1)
+                                    p_alarm_b->tm_mday = 31;
+                            }
+                            else if(cursor_position == 6)
+                            {
+                                p_alarm_b->tm_mon--;           
+                                if(p_alarm_b->tm_mon < 0)
+                                    p_alarm_b->tm_mon = 11;
+                            }
+                            else 
+                            {
+                                p_alarm_b->tm_year--;          
+                            }
+                            break;
+                            
+                         default:
+                            break;
+                    }
+                }
                 else
+                {
                     cursor_position = 3;
+                    menu_settings_next_item();
+                }
                 break;
-            case 3:                             // Alarm B date
-                if(cursor_position == 3)
-                    cursor_position = 6;
-                else if(cursor_position == 6)
-                    cursor_position = 11;
-                else 
-                    cursor_position = 3;
+                
+            case KEY_LEFT:
+                switch(menu_item)
+                {
+                    case 0:  
+                    case 2:
+                        if(cursor_position == 3)
+                            cursor_position = 6;
+                        else
+                            cursor_position = 3;
+                        break;
+                    case 3:
+                        if(cursor_position == 3)
+                            cursor_position = 11;
+                        else if(cursor_position == 11)
+                            cursor_position = 6;
+                        else 
+                            cursor_position = 3;
+                        break;
+                }
+                break;
+                
+            case KEY_RIGHT:             
+                switch(menu_item)
+                {
+                    case 0:                             // Alarm A time
+                    case 2:                             // Alarm B time
+                        if(cursor_position == 3)
+                            cursor_position = 6;
+                        else
+                            cursor_position = 3;
+                        break;
+                        
+                    case 3:                             // Alarm B date
+                        if(cursor_position == 3)
+                            cursor_position = 6;
+                        else if(cursor_position == 6)
+                            cursor_position = 11;
+                        else 
+                            cursor_position = 3;
+                        break;                  
+                }      
+                break;         
+            default:
                 break;
         }
-    }
-    
-    // Handles the display of the settings menu on the LCD screen.
-    menu_lcd_display_information(p_alarm_a, p_alarm_b, snooze_interval, menu_item);  
-   
+        button_cooldown = true; 
+        
+        // Handles the display of the settings menu on the LCD screen. Only refesh if anything has changed.
+        menu_lcd_display_information(p_alarm_a, p_alarm_b, snooze_interval, menu_item); 
+    }    
     if(button_cooldown)
-        button_cooldown_counter++;
-    
+        button_cooldown_counter++; 
     lcd_place_cursor_at(cursor_position, 1);
 }
 

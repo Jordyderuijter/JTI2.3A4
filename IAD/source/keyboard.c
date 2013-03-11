@@ -338,11 +338,15 @@ short kb_get_buttons_pressed_raw()
 bool kb_button_is_pressed(int key)
 {
     u_short key_pressed = KeyFound | key;
-    
     if(KbRemapKey(key_pressed) == key)
         return true;
     
     return false;
+}
+
+u_char kb_button_pressed()
+{
+    return KbRemapKey(KeyFound);
 }
 /* ---------- end of module ------------------------------------------------ */
 

@@ -99,6 +99,7 @@ void    KbInjectKey(u_char VirtualKey);
 
 extern short kb_get_buttons_pressed_raw(void);
 extern bool kb_button_is_pressed(int);
+extern u_char kb_button_pressed(void);
 
 /*  ����  End Of File  �������� �������������������������������������������� */
 
