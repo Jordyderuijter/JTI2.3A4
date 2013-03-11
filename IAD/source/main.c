@@ -144,11 +144,10 @@ int main(void)
         if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
             lcd_backlight_on(20);
     }
-    
     NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
     NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
     NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
-        
+    
     for (;;)
     {
         // If a key is pressed, light up the LCD screen.

@@ -75,7 +75,6 @@ void menu_handle_settings_input(u_short* input_mode)
     {
         button_cooldown = true;
         *input_mode = 0;
-        in_edit_mode = false;
         
         lcd_show_cursor(false);
         lcd_display_main_screen();
@@ -286,7 +285,10 @@ void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooz
             display_string[4] = ':';
             display_string[5] = '0' + p_alarm_a->hm_minutes / 10;
             display_string[6] = '0' + p_alarm_a->hm_minutes % 10;
-            display_string[12] = '\0';
+            int x = 0;
+            for(x = 7; x < 13; x++)
+                display_string[x] = ' ';
+            display_string[13] = '\0';
             break;
     
         case 1:
@@ -302,8 +304,8 @@ void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooz
             display_string[9] = '0' + snooze_interval %10;    
             display_string[10] = 'm';
             display_string[11] = 'i';
-            display_string[12] = 'm';
-            display_string[13] = '\0';         
+            display_string[12] = 'n';   
+            display_string[13] = '\0';
             break;
          
         case 2:
@@ -314,7 +316,10 @@ void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooz
             display_string[4] = ':';
             display_string[5] = '0' + p_alarm_b->tm_min / 10;
             display_string[6] = '0' + p_alarm_b->tm_min % 10;
-            display_string[12] = '\0'; 
+            int y = 0;
+            for(y = 7; y < 13; y++)
+                display_string[y] = ' ';
+            display_string[13] = '\0';
             break;
             
         case 3:
@@ -333,7 +338,8 @@ void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooz
             display_string[9] = '0' + p_alarm_b->tm_year % 1000 / 100;
             display_string[10] = '0' + p_alarm_b->tm_year % 100 / 10;
             display_string[11] = '0' + p_alarm_b->tm_year % 10;
-            display_string[12] = '\0';      
+            display_string[12] = ' '; 
+            display_string[13] = '\0';
             break;
     }
     lcd_set_information(display_string);

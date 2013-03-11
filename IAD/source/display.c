@@ -39,7 +39,8 @@
 static int display_mode = 0;                // The current display mode. 0=Main, 1=Settings menu, 2=timezone setup
 static int lcd_backlight_time = 0;          // Used for temporarily lighting up the display. (time in ~500ms/half seconds)
 static int offset = 0;                      // The offset of the information scrolling.
-static char information[] = "Start-------Einde";             // The information displayed on the LCD screen.
+static char information[] = "";             // The information displayed on the LCD screen.
+
 
 /*-------------------------------------------------------------------------*/
 /* local routines (prototyping)                                            */
@@ -355,27 +356,28 @@ void lcd_display_information()
     {    
         if(t == 10)
         {
-        t=0;
-        int i;                   
-        for(i = 0; i < 13; i++)
-        {
-            if(!(i+offset >= information_size-1)) //End of string not reached yet.
-            {           
-                visibleString[i] = information[i + offset];
-            }
-            else                                    //End of string reached.
-            {                                    
-                visibleString[i] = information[i + offset - information_size+1];
-            }
-        }  
-        visibleString[13] = '\0';
-        lcd_display_string_at(visibleString, 0, 1); //Display the full string on the LCD.
+            t=0;
+            int i;                   
+            for(i = 0; i < 13; i++)
+            {
+                LogMsg_P(LOG_INFO, PSTR("%c"), information[i + offset]);
+                if(!(i+offset >= information_size)) //End of string not reached yet.
+                {           
+                    visibleString[i] = information[i + offset];
+                }
+                else                                    //End of string reached.
+                {                                    
+                    visibleString[i] = information[i + offset - information_size];
+                }
+            }  
+            visibleString[13] = '\0';
+            lcd_display_string_at(visibleString, 0, 1); //Display the full string on the LCD.
         
-        offset++;                                   //Increase the offset of the string by 1.
-        if(offset == information_size -1)           //If the end of the string has been reached, start over at the beginning of the string.
-        {
-            offset = 0;
-        }
+            offset++;                                   //Increase the offset of the string by 1.
+            if(offset == information_size -1)           //If the end of the string has been reached, start over at the beginning of the string.
+            {
+                offset = 0;
+            }
         }
     }
     else 
@@ -399,6 +401,7 @@ void lcd_set_information(char *tmp_information)
 void lcd_display_main_screen()
 {
     lcd_clear();
+    lcd_set_information("");
     display_mode = 0;
 }
 
