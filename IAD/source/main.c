@@ -75,8 +75,9 @@ void SysInitIO(void);
 static void SysControlMainBeat(u_char);
 
 void _main_init(void);
-void _handle_timezone_setup_input(void);
-void _handle_mainscreen_input(void);
+void menu_handle_timezone_setup_input(void);
+void menu_handle_mainscreen_input(void);
+void menu_handle_settings_input(u_short*);
 
 tm* get_ntp_time(float);
 void connect_to_internet(void);         // USE THESE TWO FUNCTIONS FROM inet.h AFTER MAKEFILE CAN BE EDITED
@@ -139,7 +140,7 @@ int main(void)
     while(input_mode == 2)
     {
         NutSleep(200);
-        _handle_timezone_setup_input();
+        menu_handle_timezone_setup_input();
         // If a key is pressed, light up the LCD screen.
         if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
             lcd_backlight_on(20);
@@ -158,7 +159,7 @@ int main(void)
         switch(input_mode)
         {
             case 0:
-                _handle_mainscreen_input();
+                menu_handle_mainscreen_input();
                 break;
             case 1:
                 menu_handle_settings_input(&input_mode);
@@ -169,7 +170,6 @@ int main(void)
         WatchDogRestart();
         NutSleep(100); 
     }
-
     return(0);      // never reached, but 'main()' returns a non-void, so.....
 }
 
@@ -177,23 +177,23 @@ int main(void)
 /**
  *  Handles input in 'mainscreen mode'
  */
-void _handle_mainscreen_input()
+void menu_handle_mainscreen_input()
 {
     if(kb_button_is_pressed(KEY_OK))               // Go to settings menu
     {
-        lcd_display_settings_menu();
         input_mode = 1;
-    }
+        alarmstatus_changed = true;
+    } 
 }
 
 /**
  * Handles input in 'timezone setup mode';
  */
-void _handle_timezone_setup_input()
+void menu_handle_timezone_setup_input()
 {
     static int cursor_position = 11;            // 11 = hours, 14 = minutes.
-    static struct hm utc_offset;
-    static struct hm* p_utc_offset = &utc_offset;
+    static tm utc_offset;
+    static tm* p_utc_offset = &utc_offset;
     static char display_string[7];
     bool cursor_position_changed = false;
     
@@ -204,16 +204,12 @@ void _handle_timezone_setup_input()
         //_correct_timestamp_with_timezone(&timestamp, utc_offset);     Can this be done trough NTP??
         
         // Set new time
-        timestamp.tm_hour += p_utc_offset->hm_hours;    // Is going to give problems with the day/month/years!!! (28 feb, 22:00 + 8 hours will give 28 feb 06:00?)
-        timestamp.tm_min += p_utc_offset->hm_minutes;   // Is going to give problems with the day/month/years!!!
-        
+        timestamp.tm_hour += p_utc_offset->tm_hour;    // Is going to give problems with the day/month/years!!! (28 feb, 22:00 + 8 hours will give 28 feb 06:00?)
+        timestamp.tm_min += p_utc_offset->tm_min;   // Is going to give problems with the day/month/years!!!
         X12RtcSetClock(&timestamp);
         
         lcd_show_cursor(false);
-        input_mode = 0; // Switch input mode to mainscreen mode.
-        
-        lcd_display_main_screen();
-        
+        input_mode = 0; // Switch input mode to mainscreen mode.           
         return;         // Since we have switched input mode we don't need to execute the other code in the function.
     }
     
@@ -231,18 +227,18 @@ void _handle_timezone_setup_input()
     {
         if(kb_button_is_pressed(KEY_UP))
         {            
-            p_utc_offset->hm_hours++;
+            p_utc_offset->tm_hour++;
             
-            if(p_utc_offset->hm_hours > 14)
-                p_utc_offset->hm_hours = -12;
+            if(p_utc_offset->tm_hour > 14)
+                p_utc_offset->tm_hour = -12;
             lcd_display_string_at(display_string, 10, 0);  
         }
         else if(kb_button_is_pressed(KEY_DOWN))
         {                      
-            p_utc_offset->hm_hours--;
+            p_utc_offset->tm_hour--;
             
-            if(p_utc_offset->hm_hours < -12)
-                p_utc_offset->hm_hours = 14;
+            if(p_utc_offset->tm_hour < -12)
+                p_utc_offset->tm_hour = 14;
             lcd_display_string_at(display_string, 10, 0);  
         }
     }
@@ -250,34 +246,34 @@ void _handle_timezone_setup_input()
     {
         if(kb_button_is_pressed(KEY_UP))
         {            
-            p_utc_offset->hm_minutes += 15;
+            p_utc_offset->tm_min += 15;
             
-            if(p_utc_offset->hm_minutes >= 60)
-                p_utc_offset->hm_minutes = 0;
+            if(p_utc_offset->tm_min >= 60)
+                p_utc_offset->tm_min = 0;
             lcd_display_string_at(display_string, 10, 0);  
         }
         else if(kb_button_is_pressed(KEY_DOWN))
         {            
-            p_utc_offset->hm_minutes -= 15;
+            p_utc_offset->tm_min -= 15;
             
-            if(p_utc_offset->hm_minutes < 0)
-                p_utc_offset->hm_minutes = 45;
+            if(p_utc_offset->tm_min < 0)
+                p_utc_offset->tm_min = 45;
             lcd_display_string_at(display_string, 10, 0);  
         }
     }
     
-    if(p_utc_offset->hm_hours > 0)
+    if(p_utc_offset->tm_hour > 0)
         display_string[0] = '+';
-    else if(p_utc_offset->hm_hours < 0)
+    else if(p_utc_offset->tm_hour < 0)
         display_string[0] = '-';
     else
         display_string[0] = ' ';
     
-    display_string[1] = '0' + abs(p_utc_offset->hm_hours) / 10;
-    display_string[2] = '0' + abs(p_utc_offset->hm_hours) % 10;
+    display_string[1] = '0' + abs(p_utc_offset->tm_hour) / 10;
+    display_string[2] = '0' + abs(p_utc_offset->tm_hour) % 10;
     display_string[3] = ':';
-    display_string[4] = '0' + p_utc_offset->hm_minutes / 10;
-    display_string[5] = '0' + p_utc_offset->hm_minutes % 10;
+    display_string[4] = '0' + p_utc_offset->tm_min / 10;
+    display_string[5] = '0' + p_utc_offset->tm_min % 10;
     display_string[6] = '\0';
     
    
@@ -358,7 +354,7 @@ void _main_init()
     X12Init();
     if (X12RtcGetClock(&gmt) == 0)
     {
-		LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
+		LogMsg_P(LOG_INFO, PSTR("RTC time [%d:%d:%d %d-%d-%d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec, gmt.tm_mday, gmt.tm_mon, gmt.tm_year );
     }
     At45dbInit();
     RcInit();

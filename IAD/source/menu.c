@@ -6,8 +6,10 @@
 #include "keyboard.h"
 #include "menu.h"
 #include "rtc.h"
+#include "log.h"
 #include <time.h> 
 
+#define LOG_MODULE  LOG_MAIN_MODULE
 #define MAX_MENU_ITEM_INDEX 3          // Zero-based index
 
 // 'LOCAL VARIABLE DEFINITIONS'
@@ -17,7 +19,7 @@ void menu_show_settings(void);
 void menu_settings_next_item(void);
 void menu_settings_previous_item(void);
 void menu_handle_settings_input(u_short* input_mode);
-void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooze_interval, int menu_item);
+void menu_lcd_display_information(tm *p_alarm_a, tm *p_alarm_b, int snooze_interval, int menu_item);
 
 /**
  * Show the next menu item.
@@ -45,8 +47,8 @@ void menu_settings_previous_item()
 void menu_handle_settings_input(u_short* input_mode)
 {
     static bool in_edit_mode = false;
-    static struct hm alarm_a;
-    static struct hm* p_alarm_a = &alarm_a;
+    static tm alarm_a;
+    static tm* p_alarm_a = &alarm_a;
     static tm alarm_b;
     static tm* p_alarm_b = &alarm_b;
     static u_short cursor_position = 3;
@@ -75,18 +77,32 @@ void menu_handle_settings_input(u_short* input_mode)
     {
         button_cooldown = true;
         *input_mode = 0;
-        
+        lcd_set_information("             "); //RSS / Radio information should be shown here.        
         lcd_show_cursor(false);
+        
         lcd_display_main_screen();
-        menu_item = -1;
+        menu_item = 0;
         
         return;
     }
     else if(kb_button_is_pressed(KEY_OK) && !button_cooldown)
-    {
+    {         
+        if(in_edit_mode)
+        {
+            switch (menu_item)
+            {
+                case 0: 
+                    set_alarm_a(p_alarm_a);
+                    break;
+                case 2:
+                case 3:
+                    set_alarm_b(p_alarm_b);
+                    break;
+            }
+        }
         button_cooldown = true;
         in_edit_mode = !in_edit_mode;
-        lcd_show_cursor(in_edit_mode);    
+        lcd_show_cursor(in_edit_mode);
     }
     else if(kb_button_is_pressed(KEY_UP) && !button_cooldown)
     {
@@ -95,17 +111,17 @@ void menu_handle_settings_input(u_short* input_mode)
         {
             if(cursor_position == 3)
             {
-                p_alarm_a->hm_hours++;
+                p_alarm_a->tm_hour++;
                 
-                if(p_alarm_a->hm_hours > 23)
-                    p_alarm_a->hm_hours = 0;
+                if(p_alarm_a->tm_hour > 23)
+                    p_alarm_a->tm_hour = 0;
             }
             else
             {
-                p_alarm_a->hm_minutes++;
+                p_alarm_a->tm_min++;
                 
-                if(p_alarm_a->hm_minutes > 59)
-                    p_alarm_a->hm_minutes = 0;
+                if(p_alarm_a->tm_min > 59)
+                    p_alarm_a->tm_min = 0;
             }
         }
         else if(menu_item == 1 && in_edit_mode)
@@ -151,7 +167,11 @@ void menu_handle_settings_input(u_short* input_mode)
             }
         } 
         else
+        {
+            cursor_position = 3;  
             menu_settings_previous_item();
+        }
+           
     }
     else if(kb_button_is_pressed(KEY_DOWN) && !button_cooldown)
     {
@@ -160,17 +180,17 @@ void menu_handle_settings_input(u_short* input_mode)
         {
             if(cursor_position == 3)
             {
-                p_alarm_a->hm_hours--;
+                p_alarm_a->tm_hour--;
                 
-                if(p_alarm_a->hm_hours < 0)
-                    p_alarm_a->hm_hours = 23;
+                if(p_alarm_a->tm_hour < 0)
+                    p_alarm_a->tm_hour = 23;
             }
             else
             {
-                p_alarm_a->hm_minutes--;
+                p_alarm_a->tm_min--;
                 
-                if(p_alarm_a->hm_minutes < 0)
-                    p_alarm_a->hm_minutes = 59;
+                if(p_alarm_a->tm_min< 0)
+                    p_alarm_a->tm_min = 59;
             }
         }
         else if(menu_item == 1 && in_edit_mode)
@@ -215,6 +235,7 @@ void menu_handle_settings_input(u_short* input_mode)
         }
         else
         {
+            cursor_position = 3;
             menu_settings_next_item();
         }
     }
@@ -232,8 +253,8 @@ void menu_handle_settings_input(u_short* input_mode)
                 break;
             case 3:
                 if(cursor_position == 3)
-                    cursor_position = 9;
-                else if(cursor_position == 9)
+                    cursor_position = 11;
+                else if(cursor_position == 11)
                     cursor_position = 6;
                 else 
                     cursor_position = 3;
@@ -256,7 +277,7 @@ void menu_handle_settings_input(u_short* input_mode)
                 if(cursor_position == 3)
                     cursor_position = 6;
                 else if(cursor_position == 6)
-                    cursor_position = 9;
+                    cursor_position = 11;
                 else 
                     cursor_position = 3;
                 break;
@@ -272,7 +293,7 @@ void menu_handle_settings_input(u_short* input_mode)
     lcd_place_cursor_at(cursor_position, 1);
 }
 
-void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooze_interval, int menu_item)
+void menu_lcd_display_information(tm *p_alarm_a, tm *p_alarm_b, int snooze_interval, int menu_item)
 {
     char display_string[13];
     switch(menu_item)
@@ -280,11 +301,11 @@ void menu_lcd_display_information(struct hm *p_alarm_a, tm *p_alarm_b, int snooz
         case 0:
             display_string[0] = 'A';
             display_string[1] = ':';
-            display_string[2] = '0' + p_alarm_a->hm_hours / 10;
-            display_string[3] = '0' + p_alarm_a->hm_hours % 10;
+            display_string[2] = '0' + p_alarm_a->tm_hour / 10;
+            display_string[3] = '0' + p_alarm_a->tm_hour % 10;
             display_string[4] = ':';
-            display_string[5] = '0' + p_alarm_a->hm_minutes / 10;
-            display_string[6] = '0' + p_alarm_a->hm_minutes % 10;
+            display_string[5] = '0' + p_alarm_a->tm_min / 10;
+            display_string[6] = '0' + p_alarm_a->tm_min % 10;
             int x = 0;
             for(x = 7; x < 13; x++)
                 display_string[x] = ' ';

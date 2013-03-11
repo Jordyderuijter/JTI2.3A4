@@ -73,7 +73,6 @@
 #define KEY_MMC_IN     16
 #define KEY_MMC_OUT    17
 
-
 // remove these, not available on SIR100
 #define KEY_00         0xFC
 

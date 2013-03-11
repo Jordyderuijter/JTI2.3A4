@@ -138,6 +138,9 @@
  */
 #define BIN2BCD(x) (((((u_char)(x)) / 10) << 4) + (x) % 10)
 
+/*Variables*/
+extern int alarm_a_on;
+extern int alarm_b_on;
 
 /* Prototypes */
 extern int X12Init(void);

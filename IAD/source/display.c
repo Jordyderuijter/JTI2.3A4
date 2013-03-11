@@ -36,10 +36,11 @@
 /*-------------------------------------------------------------------------*/
 /* local variable definitions                                              */
 /*-------------------------------------------------------------------------*/
-static int display_mode = 0;                // The current display mode. 0=Main, 1=Settings menu, 2=timezone setup
+//static int display_mode = 0;                // The current display mode. 0=Main, 1=Settings menu, 2=timezone setup
 static int lcd_backlight_time = 0;          // Used for temporarily lighting up the display. (time in ~500ms/half seconds)
 static int offset = 0;                      // The offset of the information scrolling.
 static char information[] = "";             // The information displayed on the LCD screen.
+bool alarmstatus_changed = true;
 
 
 /*-------------------------------------------------------------------------*/
@@ -60,7 +61,6 @@ void lcd_display_alarmstatus(bool alarmA, bool alarmB);
 void lcd_display_information(void);
 void lcd_set_information(char *tmp_information);
 void lcd_display_main_screen(void);
-void lcd_display_settings_menu(void);
 void _display_main_screen(void);
 void lcd_display_timezone_setup(void);
 void lcd_show_cursor(bool value);
@@ -271,7 +271,7 @@ void lcd_display_timestamp(struct _tm* tm)
                         ' ',
                         '0' + (tm->tm_mday / 10), '0' + (tm->tm_mday % 10), '-',
                         '0' + (tm->tm_mon / 10), '0' + (tm->tm_mon % 10), '-',
-                        '2', '0' + (tm->tm_year /100)-1, '0' + ((tm->tm_year % 100) / 10) - 1, '0' + (tm->tm_year % 10), '\0'};
+                        '2', '0' + (tm->tm_year /100)-1, '0' + ((tm->tm_year % 100) / 10), '0' + (tm->tm_year % 10), '\0'};
     lcd_display_string_at(string, 0, 0);
 }
 
@@ -360,7 +360,6 @@ void lcd_display_information()
             int i;                   
             for(i = 0; i < 13; i++)
             {
-                LogMsg_P(LOG_INFO, PSTR("%c"), information[i + offset]);
                 if(!(i+offset >= information_size)) //End of string not reached yet.
                 {           
                     visibleString[i] = information[i + offset];
@@ -400,18 +399,15 @@ void lcd_set_information(char *tmp_information)
  */
 void lcd_display_main_screen()
 {
-    lcd_clear();
-    lcd_set_information("");
-    display_mode = 0;
-}
-
-/**
- * Changes 'displaymode' to display the settings menu.
- */
-void lcd_display_settings_menu()
-{
-    lcd_clear();
-    display_mode = 1;
+    tm time_stamp;
+    X12RtcGetClock(&time_stamp);
+    lcd_display_timestamp(&time_stamp);         //Shows the time and date on first line of the screen.
+    if(alarmstatus_changed)                     //Only print if alarmstatus changes to make sure the cursor doesn't bug.
+    {
+        lcd_display_alarmstatus(alarm_a_on, alarm_b_on); //Shows the status of the alarms on the screen in the bottom right corner.
+        alarmstatus_changed = false;
+    }
+   
 }
 
 /**
@@ -420,7 +416,6 @@ void lcd_display_settings_menu()
 void lcd_display_timezone_setup()
 {
     lcd_clear();
-    display_mode = 2;
     lcd_display_string_at("Timezone:  00:00\0", 0, 0);
 }
 
@@ -460,15 +455,9 @@ int lcd_place_cursor_at(int x, int y)
  */
 THREAD(DisplayThread, arg)
 {
-    tm time_stamp;
-    
     for(;;)
     {
-        // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
-        lcd_cursor_home();     // Can probably be removed, first needs testing though!
-        X12RtcGetClock(&time_stamp);
-        lcd_display_timestamp(&time_stamp); //Shows the time and date on first line of the screen.
-        lcd_display_alarmstatus(true, true); //Shows the status of the alarms on the screen in the bottom right corner.
+        lcd_display_main_screen(); //Shows time, date and alarm status. Only shows alarm status again if it changed.  
         
         // Turn off the backlight if it was temporarily enabled.
         if(lcd_backlight_time == 0)

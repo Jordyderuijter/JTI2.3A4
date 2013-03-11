@@ -27,6 +27,7 @@
 #include "log.h"
 #include "keyboard.h"
 #include "vs10xx.h"
+#include "display.h"
 
 #define I2C_SLA_RTC         0x6F
 #define I2C_SLA_EEPROM      0x57
@@ -34,6 +35,8 @@
 
 
 static u_long rtc_status;
+int alarm_a_on = 0;
+int alarm_b_on = 0;
 
 /*!
  * \brief Enable or disable write access.
@@ -479,6 +482,8 @@ int X12Init(void)
 void set_alarm_a(tm* time)
 {
     X12RtcSetAlarm(0, time, 0b00000110);
+    alarm_a_on = 1;
+    alarmstatus_changed = true;
 }
 
 /**
@@ -500,6 +505,8 @@ tm* get_alarm_a(tm* gmt)
 void set_alarm_b(tm* time)
 {
     X12RtcSetAlarm(1, time, 0b00011110);
+    alarm_b_on = 1;
+    alarmstatus_changed = true;
 }
 
 /**
@@ -540,6 +547,7 @@ THREAD(AlarmPollingThread, arg)
         if(alarm_b!=0)
         {
             VsBeep((u_char)1000, 1000);              //BeepBoop, beeps with (frequency, duration)
+            alarm_b_on = false;
         }
 
         if(kb_button_is_pressed(KEY_ESC) && alarm_a!=0)
@@ -552,6 +560,19 @@ THREAD(AlarmPollingThread, arg)
             X12RtcClearStatus(0b01000000);
             disable_alarm_b();
         }
+        
+        if(kb_button_is_pressed(KEY_01))         // Turn alarm A on/off
+        {
+            alarm_a_on = !alarm_a_on;
+            alarmstatus_changed = true;
+        }
+        else if(kb_button_is_pressed(KEY_02))         // Turn alarm B on/off
+        {
+            alarm_b_on = !alarm_b_on;
+            alarmstatus_changed = true;
+        }
         NutSleep(100);
     }
 }
+
+
