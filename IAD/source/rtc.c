@@ -27,6 +27,7 @@
 #include "log.h"
 #include "keyboard.h"
 #include "vs10xx.h"
+#include "menu.h"
 
 #define I2C_SLA_RTC         0x6F
 #define I2C_SLA_EEPROM      0x57

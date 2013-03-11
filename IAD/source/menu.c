@@ -6,7 +6,8 @@
 #include "keyboard.h"
 #include "menu.h"
 #include "rtc.h"
-#include <time.h> 
+#include <time.h>
+#include "flash.h"
 
 #define MAX_MENU_ITEM_INDEX 3          // Zero-based index
 
@@ -54,6 +55,13 @@ void menu_handle_settings_input(u_short* input_mode)
     static short button_cooldown_counter = 0; 
     static bool button_cooldown = true;
     static bool first_call = true;
+    
+    // These should be heap memory!
+    static tm alarm_a_time;
+    static tm* p_alarm_a_time = &alarm_a_time;
+    static tm alarm_b_original;
+    static tm* p_alarm_b_original = &alarm_b_original;
+    
     if(first_call)
     {
         p_alarm_b->tm_mday = 0;
@@ -86,7 +94,36 @@ void menu_handle_settings_input(u_short* input_mode)
     {
         button_cooldown = true;
         in_edit_mode = !in_edit_mode;
-        lcd_show_cursor(in_edit_mode);    
+        lcd_show_cursor(in_edit_mode);  
+        
+        // Save data
+        if(in_edit_mode)
+        {
+            switch(menu_item)
+            {
+                case 0:
+                    p_alarm_a_time->tm_min = p_alarm_a->hm_minutes;
+                    p_alarm_a_time->tm_hour = p_alarm_a->hm_hours;
+                    set_alarm_a(p_alarm_a_time);
+                    break;
+                case 1:
+                    At45dbPageWrite(2, &snooze_interval, sizeof(short));
+                    break;
+                case 2:
+                    get_alarm_b(p_alarm_b_original);
+                    p_alarm_b->tm_mday = p_alarm_b_original->tm_mday;
+                    p_alarm_b->tm_mon = p_alarm_b_original->tm_mon;
+                    p_alarm_b->tm_year = p_alarm_b_original->tm_year;
+                    set_alarm_b(p_alarm_b);
+                        break;
+                case 3:
+                    get_alarm_b(p_alarm_b_original);
+                    p_alarm_b->tm_min = p_alarm_b_original->tm_min;
+                    p_alarm_b->tm_hour = p_alarm_b_original->tm_hour;
+                    set_alarm_b(p_alarm_b);
+                    break;
+            }
+        }
     }
     else if(kb_button_is_pressed(KEY_UP) && !button_cooldown)
     {
