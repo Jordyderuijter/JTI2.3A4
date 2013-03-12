@@ -17,7 +17,7 @@
 
 //#define RESET   // If defined, this will reset the 'first time setup status'.
                 //Should only be used when uploading code without this defined immediately afterwards!!
-//#define USE_INTERNET  // If defined, this will enable NTP synchronization. Should always be defined in final 'production' code.
+#define USE_INTERNET  // If defined, this will enable NTP synchronization. Should always be defined in final 'production' code.
                         // Only comment when testing without access to an internet connection!
 /*--------------------------------------------------------------------------*/
 /*  Include files                                                           */
@@ -207,7 +207,10 @@ void _handle_timezone_setup_input()
     bool cursor_position_changed = false;
     
     if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen.
-    {        
+    {
+        if(p_utc_offset->tm_hour < 0)
+            p_utc_offset->tm_min *= -1;
+        
         // Save the timezone offset to flash memory for use at NTP syncs.
         At45dbPageWrite(1, p_utc_offset, sizeof(tm));
         
@@ -239,7 +242,7 @@ void _handle_timezone_setup_input()
             
             if(p_utc_offset->tm_hour > 14)
                 p_utc_offset->tm_hour = -12;
-            lcd_display_string_at(display_string, 10, 0);  
+            lcd_display_string_at(display_string, 10, 0);
         }
         else if(kb_button_is_pressed(KEY_DOWN))
         {                      
@@ -258,7 +261,7 @@ void _handle_timezone_setup_input()
             
             if(p_utc_offset->tm_min >= 60)
                 p_utc_offset->tm_min = 0;
-            lcd_display_string_at(display_string, 10, 0);  
+            lcd_display_string_at(display_string, 10, 0);
         }
         else if(kb_button_is_pressed(KEY_DOWN))
         {            
@@ -283,7 +286,6 @@ void _handle_timezone_setup_input()
     display_string[4] = '0' + p_utc_offset->tm_min / 10;
     display_string[5] = '0' + p_utc_offset->tm_min % 10;
     display_string[6] = '\0';
-    
    
     if(cursor_position_changed)
     {
@@ -313,6 +315,7 @@ tm* get_ntp_time()
         NutSleep(1000);
         puts("Failed to retrieve time.");
     }
+    
     ntp_datetime = localtime(&ntp_time);
     
     //printf("NTP time is: %02d:%02d:%02d\n", ntp_datetime->tm_hour, ntp_datetime->tm_min, ntp_datetime->tm_sec);
