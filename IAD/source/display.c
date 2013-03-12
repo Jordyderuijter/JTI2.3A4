@@ -381,7 +381,11 @@ void lcd_display_information()
     }
     else 
     {
-        lcd_display_string_at(information, 0, 1);
+        if(information_changed)
+        {
+            lcd_display_string_at(information, 0, 1);
+            information_changed = 0;
+        }
     }
     t++;
 }

@@ -14,6 +14,7 @@
 
 // 'LOCAL VARIABLE DEFINITIONS'
 short menu_item = 0;           // Menu item to display. 0 = A time, 1 = A snooze, 2 = B time, 3 = B date.
+u_int information_changed = 1;
 
 void menu_show_settings(void);
 void menu_settings_next_item(void);
@@ -64,7 +65,6 @@ void menu_handle_settings_input(u_short* input_mode)
         p_alarm_b->tm_hour = 0;
         p_alarm_b->tm_min = 0;
         p_alarm_b->tm_sec = 0;
-        first_call = false;
     }
     
     if(button_cooldown_counter >= 2)
@@ -176,8 +176,11 @@ void menu_handle_settings_input(u_short* input_mode)
                 }
                 else
                 {
-                    cursor_position = 3;  
                     menu_settings_previous_item();
+                    if(menu_item == 1)
+                        cursor_position = 9;
+                    else
+                        cursor_position = 3; 
                 }  
                 break;
                 
@@ -249,14 +252,17 @@ void menu_handle_settings_input(u_short* input_mode)
                 }
                 else
                 {
-                    cursor_position = 3;
-                    menu_settings_next_item();
+                    menu_settings_next_item();           
+                    if(menu_item == 1)
+                        cursor_position = 9;
+                    else
+                        cursor_position = 3;                  
                 }
                 break;
                 
             case KEY_LEFT:
                 switch(menu_item)
-                {
+                {                        
                     case 0:  
                     case 2:
                         if(cursor_position == 3)
@@ -299,14 +305,23 @@ void menu_handle_settings_input(u_short* input_mode)
             default:
                 break;
         }
-        button_cooldown = true; 
-        
-        // Handles the display of the settings menu on the LCD screen. Only refesh if anything has changed.
+        if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
+        {
+            button_cooldown = true;       
+            // Handles the display of the settings menu on the LCD screen. Only refesh if anything has changed.
+            menu_lcd_display_information(p_alarm_a, p_alarm_b, snooze_interval, menu_item);   
+        }             
+    }  
+    if(first_call)
+    {
         menu_lcd_display_information(p_alarm_a, p_alarm_b, snooze_interval, menu_item); 
-    }    
+        first_call = false;
+    }
+    
     if(button_cooldown)
         button_cooldown_counter++; 
-    lcd_place_cursor_at(cursor_position, 1);
+    if(in_edit_mode)
+        lcd_place_cursor_at(cursor_position, 1);
 }
 
 void menu_lcd_display_information(tm *p_alarm_a, tm *p_alarm_b, int snooze_interval, int menu_item)
@@ -380,4 +395,6 @@ void menu_lcd_display_information(tm *p_alarm_a, tm *p_alarm_b, int snooze_inter
             break;
     }
     lcd_set_information(display_string);
+    information_changed = 1;
+    
 }

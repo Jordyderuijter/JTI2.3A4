@@ -153,7 +153,10 @@ int main(void)
     {
         // If a key is pressed, light up the LCD screen.
         if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
+        {
             lcd_backlight_on(20);
+            information_changed = true;
+        }
         
         // Handle input based on the current input mode.
         switch(input_mode)

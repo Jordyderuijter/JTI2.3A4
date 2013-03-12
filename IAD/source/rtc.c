@@ -529,8 +529,11 @@ void disable_alarm_b()
 
 THREAD(AlarmPollingThread, arg)
 {
+    static u_int button_cooldown_counter = 0;
+    static bool button_cooldown = true;
     u_long alarm_a;
     u_long alarm_b;   
+    
     for(;;)
     {      
         X12RtcGetStatus(&alarm_a);
@@ -539,38 +542,54 @@ THREAD(AlarmPollingThread, arg)
 
         alarm_b &= 0b01000000;
 
-        if(alarm_a!=0)
+        if(alarm_a!=0 && alarm_a_on)
         {
             VsBeep((u_char)500, 1000);              //BeepBoop, beeps with (frequency, duration)
         }
 
-        if(alarm_b!=0)
+        if(alarm_b!=0 && alarm_b_on)
         {
             VsBeep((u_char)1000, 1000);              //BeepBoop, beeps with (frequency, duration)
-            alarm_b_on = false;
         }
 
-        if(kb_button_is_pressed(KEY_ESC) && alarm_a!=0)
+        if(button_cooldown_counter >= 2)
         {
-            X12RtcClearStatus(0b00100000);
-        }
+                button_cooldown = false;
+                button_cooldown_counter = 0;
+        }   
+    
+        if(!button_cooldown)
+        {
+            switch(kb_button_pressed())
+            {
+                case KEY_ESC:
+                    if(alarm_a != 0)
+                        X12RtcClearStatus(0b00100000);
+                    if(alarm_b != 0)
+                    {
+                        X12RtcClearStatus(0b01000000);
+                        disable_alarm_b();
+                        alarm_b_on = false;
+                    }
+                    break;
 
-        if(kb_button_is_pressed(KEY_ESC) && alarm_b!=0)
-        {
-            X12RtcClearStatus(0b01000000);
-            disable_alarm_b();
+                case KEY_01:
+                    alarm_a_on = !alarm_a_on;
+                    alarmstatus_changed = true;
+                    break;
+
+                case KEY_02:
+                    alarm_b_on = !alarm_b_on;
+                    alarmstatus_changed = true;
+                    break;
+
+                default:
+                    break;
+            }
+            button_cooldown = true;
         }
-        
-        if(kb_button_is_pressed(KEY_01))         // Turn alarm A on/off
-        {
-            alarm_a_on = !alarm_a_on;
-            alarmstatus_changed = true;
-        }
-        else if(kb_button_is_pressed(KEY_02))         // Turn alarm B on/off
-        {
-            alarm_b_on = !alarm_b_on;
-            alarmstatus_changed = true;
-        }
+        if(button_cooldown)
+                button_cooldown_counter++; 
         NutSleep(100);
     }
 }
