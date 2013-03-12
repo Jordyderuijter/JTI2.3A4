@@ -467,6 +467,7 @@ THREAD(DisplayThread, arg)
         // First display the 'constant' information at each update. This doesn't HAVE to be done every update, but let's do it anyway just to be sure.
         lcd_cursor_home();     // Can probably be removed, first needs testing though!
         X12RtcGetClock(&time_stamp);
+        rtc_get_local_time(&time_stamp);
         lcd_display_timestamp(&time_stamp); //Shows the time and date on first line of the screen.
         lcd_display_alarmstatus(true, true); //Shows the status of the alarms on the screen in the bottom right corner.
         

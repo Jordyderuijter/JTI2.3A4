@@ -28,6 +28,7 @@
 #include "keyboard.h"
 #include "vs10xx.h"
 #include "menu.h"
+#include "flash.h"
 
 #define I2C_SLA_RTC         0x6F
 #define I2C_SLA_EEPROM      0x57
@@ -556,3 +557,36 @@ THREAD(AlarmPollingThread, arg)
         NutSleep(100);
     }
 }
+
+/**
+ * Adjusts the given timestamp to the given timezone.
+ * @param timestamp The timestamp to adjust
+ * @param utc_offset The timezone adjustment to apply
+ */
+void rtc_get_timezone_adjusted_timestamp(tm* timestamp, tm* utc_offset)
+{
+    time_t current_time;
+    
+    //Initialization (? perhaps not necessary ?)
+    _timezone = 0;
+    current_time = mktime(timestamp);
+
+    // Set new time
+    _timezone = -((utc_offset->tm_hour  * 60 * 60) + (utc_offset->tm_min) * 60); // This will be used in time.h functions.
+    timestamp = localtime(&current_time);
+    
+    _timezone = 0;      // 'Reset' timezone. In this particular application not necessary and probably even efficient, but let's do it anyway to avoid possible confusion.
+}
+
+/**
+ * Adjusts the given time to the currently set timezone.
+ * @param timestamp The timestamp to adjust
+ */
+void rtc_get_local_time(tm* timestamp)
+{
+    tm* timezone = malloc(sizeof(tm));
+    At45dbPageRead(1, timezone, sizeof(tm));
+    rtc_get_timezone_adjusted_timestamp(timestamp, timezone);
+    free(timezone);
+}
+

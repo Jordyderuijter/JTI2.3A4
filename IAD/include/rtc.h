@@ -159,6 +159,9 @@ extern void set_alarm_b(tm* time);
 extern tm* get_alarm_b(tm* gmt);
 extern void disable_alarm_b(void);
 
+extern void rtc_get_timezone_adjusted_timestamp(tm*, tm*);
+extern void rtc_get_local_time(tm*);
+
 THREAD(AlarmPollingThread, arg);
 /* End of prototypes */
 #endif

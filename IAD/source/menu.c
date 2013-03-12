@@ -99,30 +99,8 @@ void menu_handle_settings_input(u_short* input_mode)
         // Save data
         if(in_edit_mode)
         {
-            switch(menu_item)
-            {
-                case 0:
-                    p_alarm_a_time->tm_min = p_alarm_a->hm_minutes;
-                    p_alarm_a_time->tm_hour = p_alarm_a->hm_hours;
-                    set_alarm_a(p_alarm_a_time);
-                    break;
-                case 1:
+            if(menu_item == 1)
                     At45dbPageWrite(2, &snooze_interval, sizeof(short));
-                    break;
-                case 2:
-                    get_alarm_b(p_alarm_b_original);
-                    p_alarm_b->tm_mday = p_alarm_b_original->tm_mday;
-                    p_alarm_b->tm_mon = p_alarm_b_original->tm_mon;
-                    p_alarm_b->tm_year = p_alarm_b_original->tm_year;
-                    set_alarm_b(p_alarm_b);
-                        break;
-                case 3:
-                    get_alarm_b(p_alarm_b_original);
-                    p_alarm_b->tm_min = p_alarm_b_original->tm_min;
-                    p_alarm_b->tm_hour = p_alarm_b_original->tm_hour;
-                    set_alarm_b(p_alarm_b);
-                    break;
-            }
         }
     }
     else if(kb_button_is_pressed(KEY_UP) && !button_cooldown)
