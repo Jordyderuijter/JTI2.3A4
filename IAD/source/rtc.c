@@ -570,12 +570,12 @@ void rtc_get_timezone_adjusted_timestamp(tm* timestamp, tm* utc_offset)
     //Initialization (? perhaps not necessary ?)
     _timezone = 0;
     current_time = mktime(timestamp);
-
+    
     // Set new time
     _timezone = -((utc_offset->tm_hour  * 60 * 60) + (utc_offset->tm_min) * 60); // This will be used in time.h functions.
-    timestamp = localtime(&current_time);
+    *timestamp = *localtime(&current_time);
     
-    _timezone = 0;      // 'Reset' timezone. In this particular application not necessary and probably even efficient, but let's do it anyway to avoid possible confusion.
+    _timezone = 0;      // 'Reset' timezone. In this particular application not necessary and probably even efficient, but let's do it anyway to avoid possible confusion. 
 }
 
 /**

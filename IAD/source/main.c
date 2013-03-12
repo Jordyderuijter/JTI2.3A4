@@ -207,16 +207,12 @@ void _handle_timezone_setup_input()
     bool cursor_position_changed = false;
     
     if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen.
-    {
-        tm* timestamp = malloc(sizeof(tm));
-        rtc_get_timezone_adjusted_timestamp(timestamp, p_utc_offset);
-        X12RtcSetClock(timestamp);
-        
-        free(timestamp);        // We don't need this anymore, release it.
-        
-        // New time is now set, save the timezone offset to flash memory for use at NTP syncs.
+    {        
+        // Save the timezone offset to flash memory for use at NTP syncs.
         At45dbPageWrite(1, p_utc_offset, sizeof(tm));
-
+        
+        LogMsg_P(LOG_INFO, PSTR("Offset time [%02d:%02d]"), p_utc_offset->tm_hour, p_utc_offset->tm_min);
+        
         lcd_show_cursor(false);
         input_mode = 0; // Switch input mode to mainscreen mode.
         
