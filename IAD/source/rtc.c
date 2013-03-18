@@ -518,11 +518,10 @@ void disable_alarm_b()
     X12RtcSetAlarm(1, &dummy, 0b00000000);
 }
 
-//void snooze_alarm_a(tm* time)
-//{
-//    time.tm_min+=10;
-//    set_alarm_a(time);
-//}
+void snooze_alarm_a(tm* time)
+{
+    
+}
 
 
 

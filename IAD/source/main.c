@@ -261,6 +261,8 @@ void _main_init()
     u_long alarm_a;
     u_long alarm_b;
     
+    short snooze_time;
+    
     /*
      *  First disable the watchdog
      */
@@ -329,12 +331,10 @@ void _main_init()
             alarm_b &= 0b01000000;
             
             X12RtcGetClock(&gmt);
-            LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
-                    
+            
             if(alarm_a!=0)
             {
                 VsBeep(500, 1000);              //BeepBoop, beeps with (frequency, duration)
-                LogMsg_P(LOG_INFO, PSTR("ALAAAARM!!"));
             }
 
             if(alarm_b!=0)
@@ -355,12 +355,11 @@ void _main_init()
             
             if(kb_button_is_pressed(KEY_ALT) && alarm_a!=0)
             {
+                At45dbPageRead(2, &snooze_time, 2);
                 X12RtcClearStatus(0b00100000);
-                gmt.tm_min+=1;
-                At45dbPageWrite(2, &gmt, 2);
-                X12RtcSetAlarm(0, &gmt, 0);
-                LogMsg_P(LOG_INFO, PSTR("ALARM A [%02d:%02d:%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec );
-            }
+                gmt.tm_min+=snooze_time;
+                X12RtcSetAlarm(0, &gmt, 0b00011110);
+            }            
         }
     }
     
