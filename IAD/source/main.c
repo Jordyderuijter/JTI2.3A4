@@ -299,23 +299,6 @@ void _main_init()
 
     /* Enable global interrupts */
     sei();
-    
-        //mijnshit
-    //    Set time
-    gmt.tm_hour=11;
-    gmt.tm_min=36;
-    gmt.tm_sec=55;
-    gmt.tm_mday=19;
-    gmt.tm_mon=02;
-    gmt.tm_year=113;
-    
-    X12RtcSetClock(&gmt);
-
-    //  Set alarm A
-    gmt.tm_hour=11;
-    gmt.tm_min=37;
-    
-    set_alarm_a(&gmt);
  
     int t = 0;
     
