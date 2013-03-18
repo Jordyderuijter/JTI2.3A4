@@ -564,7 +564,7 @@ THREAD(AlarmPollingThread, arg)
  * @param utc_offset The timezone adjustment to apply
  */
 void rtc_get_timezone_adjusted_timestamp(tm* timestamp, tm* utc_offset)
-{
+{    
     time_t current_time;
     
     //Initialization (? perhaps not necessary ?)
@@ -572,9 +572,9 @@ void rtc_get_timezone_adjusted_timestamp(tm* timestamp, tm* utc_offset)
     current_time = mktime(timestamp);
     
     // Set new time
-    _timezone = -((utc_offset->tm_hour  * 60 * 60) + (utc_offset->tm_min * 60)); // This will be used in time.h functions.
-    
+    _timezone = -(long)((utc_offset->tm_hour  * 60L * 60L) + (utc_offset->tm_min * 60L)); // This will be used in time.h functions.
     *timestamp = *localtime(&current_time);
+    
     
     _timezone = 0;      // 'Reset' timezone. In this particular application not necessary and probably even efficient, but let's do it anyway to avoid possible confusion.
 }
