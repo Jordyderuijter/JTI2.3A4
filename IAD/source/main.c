@@ -301,21 +301,32 @@ tm* get_ntp_time(float timezone_offset)
 {
     time_t ntp_time = 0;
     tm *ntp_datetime;
+    tm *currenttime = X12RtcGetClock(currenttime);
     uint32_t timeserver = 0;
     
-    _timezone = -1 * 60 * 60;
+    if((last_synch == NULL)||(last_synch->tm_mon < currenttime->tm_mon)||(last_synch->tm_mon > currenttime->tm_mon))
+    {
+        _timezone = -1 * 60 * 60;
  
-    puts("Retrieving time");
+        puts("Retrieving time");
  
-    timeserver = inet_addr("193.67.79.202");
+        timeserver = inet_addr("193.67.79.202");
  
-        if (NutSNTPGetTime(&timeserver, &ntp_time) == 0) {
+            if (NutSNTPGetTime(&timeserver, &ntp_time) == 0) {
             
-        } else {
-            NutSleep(1000);
-            puts("Failed to retrieve time.");
-        }
-    ntp_datetime = localtime(&ntp_time);
+                } else {
+                NutSleep(1000);
+                puts("Failed to retrieve time.");
+                }
+        ntp_datetime = localtime(&ntp_time);
+        LedControl(LED_OFF);
+        last_synch = ntp_datetime;
+        X12RtcSetClock(ntp_datetime);
+    }
+    else
+    {
+        ntp_datetime = currenttime; //already synched
+    }
     //printf("NTP time is: %02d:%02d:%02d\n", ntp_datetime->tm_hour, ntp_datetime->tm_min, ntp_datetime->tm_sec);
     return ntp_datetime;
 }
@@ -382,11 +393,14 @@ void _main_init()
 
     /* Enable global interrupts */
     sei();
+    LedControl(LED_ON);
     connect_to_internet();
+
+    X12RtcSetClock(get_ntp_time(0.0));
 #ifdef USE_INTERNET
     connect_to_internet();
-    ptime = get_ntp_time(0.0);
-    LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
+    //ptime = get_ntp_time(0.0);
+    //LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
 #endif
 }
 

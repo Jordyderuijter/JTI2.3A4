@@ -483,6 +483,7 @@ THREAD(InformationThread, arg)
     {    
         NutSleep(50);
         lcd_display_information(); //Display the information on the left bottom of the screen.    
+        get_ntp_time(0.0);
     }
 }
 
