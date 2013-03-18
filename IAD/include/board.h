@@ -127,7 +127,8 @@
  */
 //#if defined(ETHERNUT1) || defined(CHARON2) || defined(XNUT_100) || defined(XNUT_105)
 #include <dev/nicrtl.h>
-#elif defined(ETHERNUT2)
+//#elif defined(ETHERNUT2)
+
 #include <dev/lanc111.h>
 #elif defined(ETHERNUT3)
 #include <dev/dm9000e.h>

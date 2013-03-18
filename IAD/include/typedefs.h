@@ -31,7 +31,7 @@
 /*     error is too much....) */
 typedef enum _TERRORCODE
 {
-    OK = 0,                             /* All ok */
+                         /* All ok */
 
     /*
      * Status messages

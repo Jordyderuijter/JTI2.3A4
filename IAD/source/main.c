@@ -14,6 +14,8 @@
  */
  
 #define LOG_MODULE  LOG_MAIN_MODULE
+#define OK			1
+#define NOK			0
 
 //#define RESET   // If defined, this will reset the 'first time setup status'.
                 //Should only be used when uploading code without this defined immediately afterwards!!
@@ -28,6 +30,8 @@
 #include <sys/thread.h>
 #include <sys/timer.h>
 #include <sys/version.h>
+#include <sys/bankmem.h>
+#include <sys/socket.h>
 #include <dev/irqreg.h>
 
 #include "system.h"
@@ -66,7 +70,8 @@
 /* local variable definitions                                              */
 /*-------------------------------------------------------------------------*/
 static u_short input_mode = 0; // Determines which 'input mode' is used. 0=mainscreen, 1=settings menu, 2=timezone setup.
-
+tm *last_synch = NULL;
+FILE *stream;
 /*-------------------------------------------------------------------------*/
 /* local routines (prototyping)                                            */
 /*-------------------------------------------------------------------------*/
@@ -82,6 +87,10 @@ void menu_handle_settings_input(u_short*);
 tm* get_ntp_time(float);
 void connect_to_internet(void);         // USE THESE TWO FUNCTIONS FROM inet.h AFTER MAKEFILE CAN BE EDITED
 
+int ConnectToStream(void);
+int PlayStream(void);
+int play(FILE*);
+THREAD (StreamPlayer,arg);
 /*-------------------------------------------------------------------------*/
 /* Stack check variables placed in .noinit section                         */
 /*-------------------------------------------------------------------------*/
@@ -148,7 +157,8 @@ int main(void)
     NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
     NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
     NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
-    
+    ConnectToStream();
+    PlayStream(); 
     for (;;)
     {
         // If a key is pressed, light up the LCD screen.
@@ -372,7 +382,7 @@ void _main_init()
 
     /* Enable global interrupts */
     sei();
-    
+    connect_to_internet();
 #ifdef USE_INTERNET
     connect_to_internet();
     ptime = get_ntp_time(0.0);
@@ -491,6 +501,149 @@ static void SysControlMainBeat(u_char OnOff)
         // disable overflow interrupt
         disable_8_bit_timer_ovfl_int();
     }
+}
+
+// USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
+
+int ConnectToStream(void)
+{
+	int result = OK;
+	char *data;
+
+	TCPSOCKET *sock;
+
+	sock = NutTcpCreateSocket();
+	if( NutTcpConnect(	sock,
+						inet_addr("87.118.78.19"), 
+						8500) )
+	{
+		LogMsg_P(LOG_ERR, PSTR("Error: >> NutTcpConnect()"));
+		exit(1);
+	}
+	stream = _fdopen( (int) sock, "r+b" );
+
+	fprintf(stream, "GET %s HTTP/1.0\r\n", "/");
+	fprintf(stream, "Host: %s\r\n", "87.118.78.19");
+	fprintf(stream, "User-Agent: Ethernut\r\n");
+	fprintf(stream, "Accept: */*\r\n");
+	fprintf(stream, "Icy-MetaData: 1\r\n");
+	fprintf(stream, "Connection: close\r\n\r\n");
+	fflush(stream);
+
+
+	// Server stuurt nu HTTP header terug, catch in buffer
+	data = (char *) malloc(512 * sizeof(char));
+
+	while( fgets(data, 512, stream) )
+	{
+		if( 0 == *data )
+			break;
+
+		//printf("%s", data);
+	}
+
+	free(data);
+
+	return result;
+}
+
+// USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
+
+int PlayStream(void)
+{
+	play(stream);
+
+	return OK;
+}
+
+// USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
+
+int StopStream(void)
+{
+	fclose(stream);	
+
+	return OK;
+}
+
+// USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
+
+int play(FILE *stream)
+{
+	NutThreadCreate("Bg", StreamPlayer, stream, 512);
+	printf("Play thread created. Device is playing stream now !\n");
+
+	return OK;
+}
+
+THREAD(StreamPlayer, arg)
+{
+	FILE *stream = (FILE *) arg;
+	size_t rbytes = 0;
+	char *mp3buf;
+	int result = NOK;
+	int nrBytesRead = 0;
+	unsigned char iflag;
+
+	if( 0 != NutSegBufInit(8192) )
+	{
+		// Reset global buffer
+		iflag = VsPlayerInterrupts(0);
+		NutSegBufReset();
+		VsPlayerInterrupts(iflag);
+
+		result = OK;
+	}
+
+	if( OK == result )
+	{
+		if( -1 == VsPlayerInit() )
+		{
+			if( -1 == VsPlayerReset(0) )
+			{
+				result = NOK;
+			}
+		}
+	}
+
+        printf("hallo wereld");
+	for(;;)
+	{
+        iflag = VsPlayerInterrupts(0);
+        mp3buf = NutSegBufWriteRequest(&rbytes);
+        VsPlayerInterrupts(iflag);
+
+		if( VS_STATUS_RUNNING != VsGetStatus() )
+		{
+			
+                        VsPlayerKick();
+		}
+
+		while( rbytes )
+		{
+			nrBytesRead = fread(mp3buf,1,rbytes,stream);                                  
+			if( nrBytesRead > 0 )
+			{
+				iflag = VsPlayerInterrupts(0);
+				mp3buf = NutSegBufWriteCommit(nrBytesRead);
+				VsPlayerInterrupts(iflag);
+				if( nrBytesRead < rbytes && nrBytesRead < 512 )
+				{
+					NutSleep(250);
+				}
+			}
+			else
+			{
+				break;
+			}
+			rbytes -= nrBytesRead;
+
+			if( nrBytesRead <= 0 )
+			{
+				break;
+			}
+		}
+        NutSleep(100);
+	}
 }
 
 /* ---------- end of module ------------------------------------------------ */
