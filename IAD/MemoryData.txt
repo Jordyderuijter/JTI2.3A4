@@ -1,3 +1,4 @@
 First time setup status		-	boolean		-	page 0		-	1 byte
-UTC timezone			-	hm struct	-	page 1		-	4 bytes(?TO TEST?)
-Snooze interval			-	unsigned char	-	page 2		-	1 byte
+UTC timezone			-	tm struct	-	page 1		-	sizeof(tm)
+Snooze interval			-	short		-	page 2		-	1 byte
+Alarm A alarmtijd 'backup'	-	tm struct	-	page 3		-	sizeof(tm)
