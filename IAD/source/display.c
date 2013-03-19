@@ -405,6 +405,7 @@ void lcd_display_main_screen()
 {
     tm time_stamp;
     X12RtcGetClock(&time_stamp);
+    rtc_get_local_time(&time_stamp);
     lcd_display_timestamp(&time_stamp);         //Shows the time and date on first line of the screen.
     if(alarmstatus_changed)                     //Only print if alarmstatus changes to make sure the cursor doesn't bug.
     {

@@ -85,7 +85,7 @@ void menu_handle_timezone_setup_input(void);
 void menu_handle_mainscreen_input(void);
 void menu_handle_settings_input(u_short*);
 
-tm* get_ntp_time(float);
+tm* get_ntp_time(void);
 void connect_to_internet(void);         // USE THESE TWO FUNCTIONS FROM inet.h AFTER MAKEFILE CAN BE EDITED
 
 int ConnectToStream(void);
@@ -126,7 +126,14 @@ int main(void)
     _main_init();
     
 #ifdef RESET
-    At45dbPageWrite(0, &is_first_startup, 1);
+    At45dbPageWrite(0, &is_first_startup, 1);   // First time setup status
+    
+    tm* dummy = malloc(sizeof(tm));             // Reset timezone
+    dummy->tm_hour = 0;
+    dummy->tm_min = 0;
+    At45dbPageWrite(1, dummy, sizeof(tm));
+    X12RtcSetClock(dummy);
+    free(dummy); 
 #endif
     
 #ifndef RESET
@@ -215,14 +222,13 @@ void menu_handle_timezone_setup_input()
     
     if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen.
     {
-        tm timestamp;
-        X12RtcGetClock(&timestamp);
-        //_correct_timestamp_with_timezone(&timestamp, utc_offset);     Can this be done trough NTP??
+        if(p_utc_offset->tm_hour < 0)
+                p_utc_offset->tm_min *= -1; 
         
-        // Set new time
-        timestamp.tm_hour += p_utc_offset->tm_hour;    // Is going to give problems with the day/month/years!!! (28 feb, 22:00 + 8 hours will give 28 feb 06:00?)
-        timestamp.tm_min += p_utc_offset->tm_min;   // Is going to give problems with the day/month/years!!!
-        X12RtcSetClock(&timestamp);
+        // Save the timezone offset to flash memory for use at NTP syncs.
+        At45dbPageWrite(1, p_utc_offset, sizeof(tm)); 
+        
+        LogMsg_P(LOG_INFO, PSTR("Offset time [%02d:%02d]"), p_utc_offset->tm_hour, p_utc_offset->tm_min);
         
         lcd_show_cursor(false);
         input_mode = 0; // Switch input mode to mainscreen mode.           
@@ -300,21 +306,24 @@ void menu_handle_timezone_setup_input()
 }
 
 // USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
-tm* get_ntp_time(float timezone_offset)
+tm* get_ntp_time()
 {
     time_t ntp_time = 0;
-    tm *ntp_datetime;
+    tm *ntp_datetime = malloc(sizeof(tm));
     uint32_t timeserver = 0;
     
-    _timezone = -1 * 60 * 60;
+    _timezone = 0;
  
     puts("Retrieving time");
  
     timeserver = inet_addr("193.67.79.202");
  
-        if (NutSNTPGetTime(&timeserver, &ntp_time) == 0) {
+        if (NutSNTPGetTime(&timeserver, &ntp_time) == 0)
+        {
             
-        } else {
+        }
+        else
+        {
             NutSleep(1000);
             puts("Failed to retrieve time.");
         }
@@ -387,9 +396,11 @@ void _main_init()
     sei();
     connect_to_internet();
 #ifdef USE_INTERNET
+    tm* p_time;
     connect_to_internet();
-    ptime = get_ntp_time(0.0);
+    ptime = get_ntp_time();
     LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
+    X12RtcSetClock(p_time);
 #endif
 }
 

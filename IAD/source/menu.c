@@ -58,6 +58,7 @@ void menu_handle_settings_input(u_short* input_mode)
     static short button_cooldown_counter = 0; 
     static bool button_cooldown = true;
     static bool first_call = true;
+    
     if(first_call)
     {
         p_alarm_b->tm_mday = 0;
@@ -89,7 +90,7 @@ void menu_handle_settings_input(u_short* input_mode)
                 }
                 break;
             
-            case KEY_OK:             
+            case KEY_OK:       
                 if(in_edit_mode)
                 {
                     switch (menu_item)
