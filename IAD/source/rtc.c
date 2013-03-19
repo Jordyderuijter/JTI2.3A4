@@ -621,30 +621,20 @@ THREAD(AlarmPollingThread, arg)
 */
 void rtc_get_timezone_adjusted_timestamp(tm* timestamp, tm* utc_offset)
 {
+    LogMsg_P(LOG_INFO, PSTR("First call in function:time [%02d:%02d]"), timestamp->tm_hour, timestamp->tm_min);
+    LogMsg_P(LOG_INFO, PSTR("First call in function:offset [%02d:%02d]"), utc_offset->tm_hour, utc_offset->tm_min);
     time_t current_time;
     
     //Initialization (? perhaps not necessary ?)
-    _timezone = 0;
+    _timezone = 0;    
     current_time = mktime(timestamp);
 
+    LogMsg_P(LOG_INFO, PSTR("Before localtiming:time [%02d:%02d]"), timestamp->tm_hour, timestamp->tm_min);
+    LogMsg_P(LOG_INFO, PSTR("Before localtiming:offset [%02d:%02d]"), utc_offset->tm_hour, utc_offset->tm_min);
     // Set new time
-    _timezone = -(long)((utc_offset->tm_hour  * 60L * 60L) + (utc_offset->tm_min * 60L)); // This will be used in time.h functions. 
+    _timezone = -(long)((utc_offset->tm_hour  * 60L * 60L) + (utc_offset->tm_min * 60L)); // This will be used in time.h functions.
     *timestamp = *localtime(&current_time);
-    
     _timezone = 0; // 'Reset' timezone. In this particular application not necessary and probably even efficient, but let's do it anyway to avoid possible confusion.
-}
-
-/**
-* Adjusts the given time to the currently set timezone.
-* @param timestamp The timestamp to adjust
-*/
-void rtc_get_local_time(tm* timestamp)
-{
-    tm* timezone = malloc(sizeof(tm));
-    At45dbPageRead(1, timezone, sizeof(tm));
     
-    rtc_get_timezone_adjusted_timestamp(timestamp, timezone);
-    free(timezone);
 }
-
 

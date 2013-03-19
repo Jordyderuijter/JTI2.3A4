@@ -163,7 +163,6 @@ extern void get_alarm_b(tm* gmt);
 extern void disable_alarm_b(void);
 
 extern void rtc_get_timezone_adjusted_timestamp(tm* timestamp, tm* utc_offset);
-extern void rtc_get_local_time(tm*); 
 
 THREAD(AlarmPollingThread, arg);
 /* End of prototypes */

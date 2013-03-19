@@ -225,11 +225,25 @@ void menu_handle_timezone_setup_input()
         if(p_utc_offset->tm_hour < 0)
                 p_utc_offset->tm_min *= -1; 
         
+        // Get UTC-0.
+        tm new_time;            // This is going to contain the new time, based on clocktime - timezone.
+        tm old_timezone;        // This is used in the clocktime - timezone calculation.
+        
+        X12RtcGetClock(&new_time);
+        At45dbPageRead(1, &old_timezone, sizeof(tm));
+        
+        old_timezone.tm_hour = -old_timezone.tm_hour;
+        old_timezone.tm_min = -old_timezone.tm_min;
+        
+        rtc_get_timezone_adjusted_timestamp(&new_time, &old_timezone);  // Now new_time SHOULD contain UTC-0. Which it does not. Because magic.
+        
         // Save the timezone offset to flash memory for use at NTP syncs.
-        At45dbPageWrite(1, p_utc_offset, sizeof(tm)); 
-        
-        LogMsg_P(LOG_INFO, PSTR("Offset time [%02d:%02d]"), p_utc_offset->tm_hour, p_utc_offset->tm_min);
-        
+        At45dbPageWrite(1, p_utc_offset, sizeof(tm));
+
+        // Write new time to clock.
+        rtc_get_timezone_adjusted_timestamp(&new_time, p_utc_offset);   // Add new timezone to UTC-0!
+        X12RtcSetClock(&new_time);                                      // Save value to clock.
+
         lcd_show_cursor(false);
         input_mode = 0; // Switch input mode to mainscreen mode.           
         return;         // Since we have switched input mode we don't need to execute the other code in the function.
@@ -379,7 +393,7 @@ void _main_init()
     X12Init();
     if (X12RtcGetClock(&gmt) == 0)
     {
-		LogMsg_P(LOG_INFO, PSTR("RTC time [%d:%d:%d %d-%d-%d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec, gmt.tm_mday, gmt.tm_mon, gmt.tm_year );
+		LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d %02d-%02d-%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec, gmt.tm_mday, gmt.tm_mon, gmt.tm_year );
     }
     At45dbInit();
     RcInit();
@@ -394,12 +408,15 @@ void _main_init()
 
     /* Enable global interrupts */
     sei();
-    connect_to_internet();
+    
 #ifdef USE_INTERNET
-    tm* p_time;
     connect_to_internet();
-    ptime = get_ntp_time();
-    LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d]"), ptime->tm_hour, ptime->tm_min, ptime->tm_sec );
+    tm* p_time = get_ntp_time();
+    LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
+    tm timezone;
+    At45dbPageRead(1, &timezone, sizeof(tm));
+    rtc_get_timezone_adjusted_timestamp(p_time, &timezone);
+    LogMsg_P(LOG_INFO, PSTR("Timezone adjusted time at NTP sync [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
     X12RtcSetClock(p_time);
 #endif
 }
@@ -584,7 +601,6 @@ int StopStream(void)
 int play(FILE *stream)
 {
 	NutThreadCreate("Bg", StreamPlayer, stream, 512);
-	printf("Play thread created. Device is playing stream now !\n");
 
 	return OK;
 }
@@ -619,7 +635,6 @@ THREAD(StreamPlayer, arg)
 		}
 	}
 
-        printf("hallo wereld");
 	for(;;)
 	{
         iflag = VsPlayerInterrupts(0);

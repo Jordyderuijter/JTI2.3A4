@@ -265,12 +265,14 @@ void lcd_cursor_home()
  * @param tm The timestamp to display on the LCD display
  */
 void lcd_display_timestamp(struct _tm* tm)
-{    
+{
+    // Adjust for month [0-11]
+    
     char string[] = {    '0' + (tm->tm_hour / 10), '0' + (tm->tm_hour % 10), ':',
                         '0' + (tm->tm_min / 10), '0' + (tm->tm_min % 10),
                         ' ',
                         '0' + (tm->tm_mday / 10), '0' + (tm->tm_mday % 10), '-',
-                        '0' + (tm->tm_mon / 10), '0' + (tm->tm_mon % 10), '-',
+                        '0' + (tm->tm_mon / 10), '0' + tm->tm_mon, '-',
                         '2', '0' + (tm->tm_year /100)-1, '0' + ((tm->tm_year % 100) / 10), '0' + (tm->tm_year % 10), '\0'};
     lcd_display_string_at(string, 0, 0);
 }
@@ -405,7 +407,6 @@ void lcd_display_main_screen()
 {
     tm time_stamp;
     X12RtcGetClock(&time_stamp);
-    rtc_get_local_time(&time_stamp);
     lcd_display_timestamp(&time_stamp);         //Shows the time and date on first line of the screen.
     if(alarmstatus_changed)                     //Only print if alarmstatus changes to make sure the cursor doesn't bug.
     {
