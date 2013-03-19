@@ -154,6 +154,10 @@ int main(void)
         if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
             lcd_backlight_on(20);
     }
+    
+    //instellingen bij opstarten hier:
+    display_config();
+    
     NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
     NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
     NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
@@ -658,6 +662,15 @@ THREAD(StreamPlayer, arg)
 		}
         NutSleep(100);
 	}
+}
+
+void display_config()
+{   
+    lcd_clear();
+    lcd_display_string_at(inet_ntoa(confnet.cdn_ip_addr) ,0,0);
+    lcd_display_string_at("Timezone: 0"  ,0,1);
+    NutSleep(3000);
+    lcd_clear();
 }
 
 /* ---------- end of module ------------------------------------------------ */

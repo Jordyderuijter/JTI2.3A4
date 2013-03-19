@@ -242,7 +242,7 @@ int X12RtcGetAlarm(int idx, struct _tm *tm, int *aflgs)
         if (data[1] & X12RTC_MNA_EMN)
         {
             *aflgs |= RTC_ALARM_MINUTE;
-            data[1] = 0b01111111;
+            data[1] &= 0b01111111;
             tm->tm_min = BCD2BIN(data[1]);
         }
         if (data[2] & X12RTC_HRA_EHR)
