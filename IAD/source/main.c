@@ -59,6 +59,7 @@
 #include <io.h>
 #include <arpa/inet.h>
 #include <pro/dhcp.h>
+#include <pro/sntp.h>
 //#include "inet.h"
 
 
@@ -157,8 +158,10 @@ int main(void)
     NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
     NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
     NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
+#ifdef USE_INTERNET
     ConnectToStream();
     PlayStream(); 
+#endif
     for (;;)
     {
         // If a key is pressed, light up the LCD screen.

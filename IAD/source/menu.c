@@ -7,6 +7,7 @@
 #include "menu.h"
 #include "rtc.h"
 #include "log.h"
+#include "flash.h"
 #include <time.h> 
 
 #define LOG_MODULE  LOG_MAIN_MODULE
@@ -95,8 +96,11 @@ void menu_handle_settings_input(u_short* input_mode)
                     {
                         case 0: 
                             set_alarm_a(p_alarm_a);
+                            At45dbPageWrite(3, p_alarm_a, sizeof(tm));
                             break;
-                        case 2:
+                        case 1:
+                            At45dbPageWrite(2, &snooze_interval, 2);
+                            break;
                         case 3:
                             set_alarm_b(p_alarm_b);
                             break;

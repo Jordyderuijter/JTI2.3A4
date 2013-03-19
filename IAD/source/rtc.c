@@ -28,6 +28,7 @@
 #include "keyboard.h"
 #include "vs10xx.h"
 #include "display.h"
+#include "flash.h"
 
 #define I2C_SLA_RTC         0x6F
 #define I2C_SLA_EEPROM      0x57
@@ -242,7 +243,7 @@ int X12RtcGetAlarm(int idx, struct _tm *tm, int *aflgs)
         if (data[1] & X12RTC_MNA_EMN)
         {
             *aflgs |= RTC_ALARM_MINUTE;
-            data[1] = 0b01111111;
+            data[1] &= 0b01111111;
             tm->tm_min = BCD2BIN(data[1]);
         }
         if (data[2] & X12RTC_HRA_EHR)
@@ -491,11 +492,10 @@ void set_alarm_a(tm* time)
  * @param gmt
  * @return returns time set for alarm A
  */
-tm* get_alarm_a(tm* gmt)
+void get_alarm_a(tm* gmt)
 {
     int flags = 0;
     X12RtcGetAlarm(0, gmt, &flags);
-    return gmt;
 }
 
 /**
@@ -514,11 +514,10 @@ void set_alarm_b(tm* time)
  * @param gmt
  * @return returns time set for alarm B
  */
-tm* get_alarm_b(tm* gmt)
+void get_alarm_b(tm* gmt)
 {
     int flags = 0;
     X12RtcGetAlarm(1, gmt, &flags);
-    return gmt;
 }
 
 void disable_alarm_b()
@@ -527,12 +526,20 @@ void disable_alarm_b()
     X12RtcSetAlarm(1, &dummy, 0b00000000);
 }
 
+void get_snooze(tm* gmt)
+{
+    At45dbPageRead(2, &gmt, 2);
+}
+
 THREAD(AlarmPollingThread, arg)
 {
     static u_int button_cooldown_counter = 0;
     static bool button_cooldown = true;
     u_long alarm_a;
-    u_long alarm_b;   
+    u_long alarm_b; 
+    short snooze_time;
+    tm snooze;
+    tm alarm_a_backup;
     
     for(;;)
     {      
@@ -556,15 +563,28 @@ THREAD(AlarmPollingThread, arg)
         {
                 button_cooldown = false;
                 button_cooldown_counter = 0;
-        }   
+        }
     
+        if(kb_button_is_pressed(KEY_ALT) && alarm_a!=0)
+        {
+            At45dbPageRead(2, &snooze_time, 2);
+            X12RtcClearStatus(0b00100000);
+            get_alarm_a(&snooze);
+            snooze.tm_min+=snooze_time;
+            set_alarm_a(&snooze);
+        }
+        
         if(!button_cooldown)
         {
             switch(kb_button_pressed())
             {
                 case KEY_ESC:
                     if(alarm_a != 0)
+                    {
                         X12RtcClearStatus(0b00100000);
+                        At45dbPageRead(3, &alarm_a_backup, sizeof(tm));
+                        set_alarm_a(&alarm_a_backup);
+                    }
                     if(alarm_b != 0)
                     {
                         X12RtcClearStatus(0b01000000);
