@@ -328,7 +328,7 @@ tm* get_ntp_time()
     uint32_t timeserver = 0;
     
     _timezone = 0;
-    if((last_synch == NULL)||(last_synch->tm_hour < currenttime->tm_hour)||(last_synch->tm_hour > currenttime->tm_hour))
+    if((last_synch == NULL) ||(last_synch->tm_mon < currenttime->tm_mon)||(last_synch->tm_mon > currenttime->tm_mon))
     {
         _timezone = -1 * 60 * 60; 
  
@@ -344,7 +344,7 @@ tm* get_ntp_time()
     ntp_datetime = localtime(&ntp_time);
     LedControl(LED_OFF);
     X12RtcSetClock(ntp_datetime);
-    X12RtcGetClock(last_synch);
+    last_synch = ntp_datetime;
     }
     else
     {
