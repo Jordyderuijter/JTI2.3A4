@@ -552,11 +552,13 @@ THREAD(AlarmPollingThread, arg)
         if(alarm_a!=0 && alarm_a_on)
         {
             VsBeep((u_char)500, 1000);              //BeepBoop, beeps with (frequency, duration)
+            VsSetVolume(0,0);
         }
 
         if(alarm_b!=0 && alarm_b_on)
         {
             VsBeep((u_char)1000, 1000);              //BeepBoop, beeps with (frequency, duration)
+            VsSetVolume(0,0);
         }
 
         if(button_cooldown_counter >= 2)
@@ -579,6 +581,16 @@ THREAD(AlarmPollingThread, arg)
             switch(kb_button_pressed())
             {
                 case KEY_ESC:
+                    if(VsGetVolume() > 0)
+                    {
+                        VsSetVolume(0, 0);
+                        puts("volume 0");
+                    }
+                    else 
+                    {
+                        VsSetVolume(100, 100);
+                        puts("volume 0");
+                    } 
                     if(alarm_a != 0)
                     {
                         X12RtcClearStatus(0b00100000);

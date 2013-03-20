@@ -65,6 +65,7 @@ void _display_main_screen(void);
 void lcd_display_timezone_setup(void);
 void lcd_show_cursor(bool value);
 int lcd_place_cursor_at(int x, int y);
+tm* get_ntp_time();
 
 
 /*!
@@ -485,6 +486,7 @@ THREAD(InformationThread, arg)
     {    
         NutSleep(50);
         lcd_display_information(); //Display the information on the left bottom of the screen.    
+        get_ntp_time();
     }
 }
 

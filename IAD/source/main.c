@@ -324,24 +324,32 @@ tm* get_ntp_time()
 {
     time_t ntp_time = 0;
     tm *ntp_datetime = malloc(sizeof(tm));
+    tm *currenttime = X12RtcGetClock(currenttime);
     uint32_t timeserver = 0;
     
     _timezone = 0;
+    if((last_synch == NULL)||(last_synch->tm_hour < currenttime->tm_hour)||(last_synch->tm_hour > currenttime->tm_hour))
+    {
+        _timezone = -1 * 60 * 60; 
  
     puts("Retrieving time");
  
     timeserver = inet_addr("193.67.79.202");
  
-        if (NutSNTPGetTime(&timeserver, &ntp_time) == 0)
-        {
-            
-        }
-        else
-        {
+        if (NutSNTPGetTime(&timeserver, &ntp_time) == 0) {
+        } else {
             NutSleep(1000);
             puts("Failed to retrieve time.");
         }
     ntp_datetime = localtime(&ntp_time);
+    LedControl(LED_OFF);
+    X12RtcSetClock(ntp_datetime);
+    X12RtcGetClock(last_synch);
+    }
+    else
+    {
+        ntp_datetime = currenttime; //already synched
+    }
     //printf("NTP time is: %02d:%02d:%02d\n", ntp_datetime->tm_hour, ntp_datetime->tm_min, ntp_datetime->tm_sec);
     return ntp_datetime;
 }
@@ -408,17 +416,22 @@ void _main_init()
 
     /* Enable global interrupts */
     sei();
+    LedControl(LED_ON);
     
-#ifdef USE_INTERNET
+    
+//    connect_to_internet();
+    
+//#ifdef USE_INTERNET
     connect_to_internet();
+    X12RtcSetClock(get_ntp_time());
     tm* p_time = get_ntp_time();
-    LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
+   // LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
     tm timezone;
     At45dbPageRead(1, &timezone, sizeof(tm));
     rtc_get_timezone_adjusted_timestamp(p_time, &timezone);
-    LogMsg_P(LOG_INFO, PSTR("Timezone adjusted time at NTP sync [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
+   // LogMsg_P(LOG_INFO, PSTR("Timezone adjusted time at NTP sync [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
     X12RtcSetClock(p_time);
-#endif
+//#endif
 }
 
 /* ����������������������������������������������������������������������� */
