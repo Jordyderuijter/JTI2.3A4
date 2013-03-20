@@ -72,7 +72,7 @@ void menu_handle_settings_input(u_short* input_mode)
         LogMsg_P(LOG_INFO, PSTR("Alarm A time [%d:%d:%d %d-%d-%d]"), p_alarm_a->tm_hour, p_alarm_a->tm_min, p_alarm_a->tm_sec, p_alarm_a->tm_mday, p_alarm_a->tm_mon, p_alarm_a->tm_year );
         get_alarm_b(p_alarm_b);
         LogMsg_P(LOG_INFO, PSTR("Alarm B time [%d:%d:%d %d-%d-%d]"), p_alarm_b->tm_hour, p_alarm_b->tm_min, p_alarm_b->tm_sec, p_alarm_b->tm_mday, p_alarm_b->tm_mon, p_alarm_b->tm_year );
-        snooze_interval = get_snooze(snooze_interval); 
+        get_snooze(&snooze_interval); 
     }
     
     if(button_cooldown_counter >= 2)
@@ -89,7 +89,7 @@ void menu_handle_settings_input(u_short* input_mode)
                 if(!in_edit_mode)
                 {
                     *input_mode = 0;
-                    lcd_set_information("             "); //RSS / Radio information should be shown here.        
+                    lcd_refresh_information(); //RSS / Radio information should be shown here. 
                     lcd_display_main_screen();
                     menu_item = 0;
                     first_call=true; 

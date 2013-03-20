@@ -39,8 +39,11 @@
 //static int display_mode = 0;                // The current display mode. 0=Main, 1=Settings menu, 2=timezone setup
 static int lcd_backlight_time = 0;          // Used for temporarily lighting up the display. (time in ~500ms/half seconds)
 static int offset = 0;                      // The offset of the information scrolling.
-static char information[] = "";             // The information displayed on the LCD screen.
+static char information[1000];             // The information displayed on the LCD screen.
+static char rss_information[10000];
+static char radio_information[100];
 bool alarmstatus_changed = true;
+bool show_rss = false;
 
 
 /*-------------------------------------------------------------------------*/
@@ -60,6 +63,9 @@ void lcd_backlight_on(int time);
 void lcd_display_alarmstatus(bool alarmA, bool alarmB);
 void lcd_display_information(void);
 void lcd_set_information(char *tmp_information);
+void lcd_set_rss_information(char *tmp_information);
+void lcd_set_radio_information(char *tmp_information);
+void lcd_refresh_information(void);
 void lcd_display_main_screen(void);
 void _display_main_screen(void);
 void lcd_display_timezone_setup(void);
@@ -268,12 +274,13 @@ void lcd_cursor_home()
 void lcd_display_timestamp(struct _tm* tm)
 {
     // Adjust for month [0-11]
+    short month = tm ->tm_mon + 1;
     
     char string[] = {    '0' + (tm->tm_hour / 10), '0' + (tm->tm_hour % 10), ':',
                         '0' + (tm->tm_min / 10), '0' + (tm->tm_min % 10),
                         ' ',
                         '0' + (tm->tm_mday / 10), '0' + (tm->tm_mday % 10), '-',
-                        '0' + (tm->tm_mon / 10), '0' + tm->tm_mon, '-',
+                        '0' + (month / 10), '0' + month, '-',
                         '2', '0' + (tm->tm_year /100)-1, '0' + ((tm->tm_year % 100) / 10), '0' + (tm->tm_year % 10), '\0'};
     lcd_display_string_at(string, 0, 0);
 }
@@ -351,13 +358,15 @@ void lcd_display_alarmstatus(bool alarmA, bool alarmB)
  */
 void lcd_display_information()
 {
+    
     int information_size = strlen(information);
+    
     char visibleString[14];
     static int t = 0;
     //If "information" is longer than 13 characters it won't fit on the screen, so it will be scrolled.
     if(information_size > 13)
     {    
-        if(t == 10)
+        if(t >= 3)
         {
             t=0;
             int i;                   
@@ -399,6 +408,34 @@ void lcd_display_information()
 void lcd_set_information(char *tmp_information)
 {
     strcpy(information, tmp_information);
+}
+
+/*
+ * Sets the rss information which is displayed on the bottom left of the screen if show_rss is true. Else, show radio information.
+ */
+void lcd_set_rss_information(char *tmp_information)
+{          
+    strcpy(rss_information, tmp_information);
+}
+
+/*
+ * Sets the rss information which is displayed on the bottom left of the screen if show_rss is false. Else, show rss information.
+ */
+void lcd_set_radio_information(char *tmp_information)
+{
+    strcpy(radio_information, tmp_information);
+}
+
+void lcd_refresh_information()
+{
+    if(show_rss)
+    {
+        lcd_set_information(rss_information);
+    }
+    else
+    {
+        lcd_set_information(radio_information);
+    }   
 }
 
 /**

@@ -49,6 +49,7 @@
 /*  Global variables                                                        */
 /*--------------------------------------------------------------------------*/
 extern bool alarmstatus_changed;
+extern bool show_rss;
 /*-------------------------------------------------------------------------*/
 /* export global routines (interface)                                      */
 /*-------------------------------------------------------------------------*/
@@ -63,12 +64,16 @@ extern void lcd_backlight_on(int);
 extern void lcd_display_alarmstatus(bool, bool);
 extern void lcd_display_information(void);
 extern void lcd_set_information(char *);
+extern void lcd_set_rss_information(char *);
+extern void lcd_set_radio_information(char *);
+extern void lcd_refresh_information(void);
 extern void lcd_display_main_screen(void);
 extern void lcd_display_settings_menu(void);
 extern void _display_main_screen(void);
 extern void lcd_display_timezone_setup(void);
 extern void lcd_show_cursor(bool);
 extern int lcd_place_cursor_at(int x, int y);
+extern char *inet_ntoa(u_long addr);
 
 THREAD(DisplayThread, arg);
 THREAD(InformationThread, arg);

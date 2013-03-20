@@ -19,7 +19,7 @@
 
 //#define RESET   // If defined, this will reset the 'first time setup status'.
                 //Should only be used when uploading code without this defined immediately afterwards!!
-//#define USE_INTERNET  // If defined, this will enable NTP synchronization. Should always be defined in final 'production' code.
+#define USE_INTERNET  // If defined, this will enable NTP synchronization. Should always be defined in final 'production' code.
                         // Only comment when testing without access to an internet connection!
 /*--------------------------------------------------------------------------*/
 /*  Include files                                                           */
@@ -73,6 +73,7 @@
 static u_short input_mode = 0; // Determines which 'input mode' is used. 0=mainscreen, 1=settings menu, 2=timezone setup.
 tm *last_synch = NULL;
 FILE *stream;
+FILE *rss;
 /*-------------------------------------------------------------------------*/
 /* local routines (prototyping)                                            */
 /*-------------------------------------------------------------------------*/
@@ -85,12 +86,14 @@ void menu_handle_timezone_setup_input(void);
 void menu_handle_mainscreen_input(void);
 void menu_handle_settings_input(u_short*);
 
+void get_rss(char*);
 tm* get_ntp_time(void);
 void connect_to_internet(void);         // USE THESE TWO FUNCTIONS FROM inet.h AFTER MAKEFILE CAN BE EDITED
 
 int ConnectToStream(void);
 int PlayStream(void);
 int play(FILE*);
+void display_config(void);
 THREAD (StreamPlayer,arg);
 /*-------------------------------------------------------------------------*/
 /* Stack check variables placed in .noinit section                         */
@@ -168,10 +171,14 @@ int main(void)
     NutThreadCreate("DisplayThread", DisplayThread, NULL, 512);                 // Start thread that handles the displaying on the LCD.
     NutThreadCreate("AlarmPollingThread", AlarmPollingThread, NULL, 512);    // Start thread that constantly 'polls' for activated alarms.
     NutThreadCreate("InformationThread", InformationThread, NULL, 512);         // Start thread that handles the information display on the LCD.
-//#ifdef USE_INTERNET
+    char * string = malloc(4000 * sizeof(char)); 
+    get_rss(string);
+    lcd_set_rss_information(string);
+#ifdef USE_INTERNET
     ConnectToStream();
     PlayStream(); 
-//#endif
+#endif
+    lcd_refresh_information();
     for (;;)
     {
         // If a key is pressed, light up the LCD screen.
@@ -205,10 +212,19 @@ int main(void)
  */
 void menu_handle_mainscreen_input()
 {
-    if(kb_button_is_pressed(KEY_OK))               // Go to settings menu
+    switch(kb_button_pressed())
     {
-        input_mode = 1;
-        alarmstatus_changed = true;
+        case KEY_OK:              // Go to settings menu
+            input_mode = 1;
+            alarmstatus_changed = true;
+            break;
+        case KEY_DOWN:
+        case KEY_UP:
+            show_rss = !show_rss;
+            lcd_refresh_information();
+            break;
+        default:
+            break;                                  
     } 
 }
 
@@ -238,6 +254,7 @@ void menu_handle_timezone_setup_input()
         old_timezone.tm_hour = -old_timezone.tm_hour;
         old_timezone.tm_min = -old_timezone.tm_min;
         
+        new_time.tm_hour++;             // This need sto be done because else... bugs. Magical magic
         rtc_get_timezone_adjusted_timestamp(&new_time, &old_timezone);  // Now new_time SHOULD contain UTC-0. Which it does not. Because magic.
         
         // Save the timezone offset to flash memory for use at NTP syncs.
@@ -327,7 +344,8 @@ tm* get_ntp_time()
 {
     time_t ntp_time = 0;
     tm *ntp_datetime = malloc(sizeof(tm));
-    tm *currenttime = X12RtcGetClock(currenttime);
+    tm *currenttime = NULL;
+    X12RtcGetClock(currenttime);
     uint32_t timeserver = 0;
     
     _timezone = 0;
@@ -577,11 +595,23 @@ int ConnectToStream(void)
 
 	// Server stuurt nu HTTP header terug, catch in buffer
 	data = (char *) malloc(512 * sizeof(char));
-
+        int radio_sentence = 1;
+        char radio_length_array[100];
+        
 	while( fgets(data, 512, stream) )
 	{
-		if( 0 == *data )
-			break;
+            if(radio_sentence == 4)
+            {
+                int i;
+                for(i = 0; i < strlen(data)-11; i++ )
+                {
+                    radio_length_array[i] = data[i+9];
+                }
+                lcd_set_radio_information(radio_length_array);
+            }
+            if( 0 == *data )
+                break;
+            radio_sentence++;
 
 		//printf("%s", data);
 	}
@@ -689,12 +719,83 @@ THREAD(StreamPlayer, arg)
 
 void display_config()
 {   
+    tm* timezone = malloc(sizeof(tm));
+    char str[16];
     lcd_clear();
     lcd_display_string_at(inet_ntoa(confnet.cdn_ip_addr) ,0,0);
-    lcd_display_string_at("Timezone: 0"  ,0,1);
+    At45dbPageRead(1, timezone, sizeof(tm));
+    strcpy (str,"Timezone: ");
+    str[10] = '0' + timezone->tm_hour / 10;
+    str[11] = '0' + timezone->tm_hour % 10;
+    str[12] = ':';
+    str[13] = '0' + timezone->tm_min / 10;
+    str[14] = '0' + timezone->tm_min % 10;
+    str[15] = '\0';
+    //lcd_display_string_at("Timezone: " timezone ,0,1);
+    lcd_display_string_at(str ,0,1);
     NutSleep(3000);
     lcd_clear();
+    free(timezone);
 } 
+
+void get_rss(char * string)
+{
+	char *data;
+	
+	TCPSOCKET *sock;
+	
+	sock = NutTcpCreateSocket();
+	if( NutTcpConnect(sock, inet_addr("145.48.226.70"), 80) )
+	{
+		LogMsg_P(LOG_ERR, PSTR("Error: >> NutTcpConnect()"));
+	
+	}
+        	rss = _fdopen( (int) sock, "r+b" );
+	
+	fprintf(rss, "GET /rssparse.php %s HTTP/1.0\r\n", "/");
+	fprintf(rss, "Host: %s\r\n", "145.48.226.70");
+	fprintf(rss, "User-Agent: Ethernut\r\n");
+	fprintf(rss, "Accept: */*\r\n");
+	fprintf(rss, "Icy-MetaData: 1\r\n");
+	fprintf(rss, "Connection: close\r\n\r\n");
+	fflush(rss);
+        
+        data = malloc(1024 * sizeof(char));
+        char rss_length_array[5];
+        int rss_length = 0;
+        int rss_sentence = 1;
+        bool rss_started = false;
+        int i; 
+        while( fgets(data, 1024, rss) )
+	{    
+            
+            for(i = 0; data[ i ]; i++)
+            {          
+                if(rss_sentence == 8)
+                {         
+                    rss_started = true;                            
+                    break;
+                }
+            }
+            if(rss_sentence == 5)
+            {
+                int i;
+                for(i = 0; i < (strlen(data)-16); i++ )
+                {          
+                    rss_length_array[i] = data[i+16];
+                }                
+                rss_length = atoi(rss_length_array);
+            }
+            if( 0 == *data || rss_started)
+                break;
+            rss_sentence++;
+	}       
+        if(rss_started)
+        {    
+            fgets(string, rss_length+1, rss);              
+            //printf("ZIN 8: %s\n", string);
+        }
+}
 
 /* ---------- end of module ------------------------------------------------ */
 

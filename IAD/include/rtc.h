@@ -161,6 +161,7 @@ extern void get_alarm_a(tm* gmt);
 extern void set_alarm_b(tm* time);
 extern void get_alarm_b(tm* gmt);
 extern void disable_alarm_b(void);
+extern void get_snooze(short* gmt);
 
 extern void rtc_get_timezone_adjusted_timestamp(tm* timestamp, tm* utc_offset);
 
