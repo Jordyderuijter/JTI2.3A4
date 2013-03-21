@@ -71,7 +71,7 @@ void _display_main_screen(void);
 void lcd_display_timezone_setup(void);
 void lcd_show_cursor(bool value);
 int lcd_place_cursor_at(int x, int y);
-tm* get_ntp_time();
+tm* get_ntp_time(void);
 
 
 /*!

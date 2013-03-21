@@ -261,20 +261,34 @@ void menu_handle_timezone_setup_input()
     static char display_string[7]; 
     bool cursor_position_changed = false; 
              
-    if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen. 
-    { 
-        tm timestamp; 
-        X12RtcGetClock(&timestamp); 
-        //_correct_timestamp_with_timezone(&timestamp, utc_offset);     Can this be done trough NTP?? 
-         
-        // Set new time 
-        timestamp.tm_hour += p_utc_offset->tm_hour;    // Is going to give problems with the day/month/years!!! (28 feb, 22:00 + 8 hours will give 28 feb 06:00?) 
-        timestamp.tm_min += p_utc_offset->tm_min;   // Is going to give problems with the day/month/years!!! 
-        X12RtcSetClock(&timestamp); 
-         
-        lcd_show_cursor(false); 
-        input_mode = 0; // Switch input mode to mainscreen mode.            
-        return;         // Since we have switched input mode we don't need to execute the other code in the function. 
+    if(kb_button_is_pressed(KEY_OK)) // Accept the current timezone offset and leave the setup screen.
+    {
+        if(p_utc_offset->tm_hour < 0)
+                p_utc_offset->tm_min *= -1;
+        
+        // Get UTC-0.
+        tm new_time; // This is going to contain the new time, based on clocktime - timezone.
+        tm old_timezone; // This is used in the clocktime - timezone calculation.
+        
+        X12RtcGetClock(&new_time);
+        At45dbPageRead(1, &old_timezone, sizeof(tm));
+        
+        old_timezone.tm_hour = -old_timezone.tm_hour;
+        old_timezone.tm_min = -old_timezone.tm_min;
+        
+        new_time.tm_hour++; // This need sto be done because else... bugs. Magical magic
+        rtc_get_timezone_adjusted_timestamp(&new_time, &old_timezone); // Now new_time SHOULD contain UTC-0. Which it does not. Because magic.
+        
+        // Save the timezone offset to flash memory for use at NTP syncs.
+        At45dbPageWrite(1, p_utc_offset, sizeof(tm));
+
+        // Write new time to clock.
+        rtc_get_timezone_adjusted_timestamp(&new_time, p_utc_offset); // Add new timezone to UTC-0!
+        X12RtcSetClock(&new_time); // Save value to clock.
+
+        lcd_show_cursor(false);
+        input_mode = 0; // Switch input mode to mainscreen mode.
+        return; // Since we have switched input mode we don't need to execute the other code in the function.     // Since we have switched input mode we don't need to execute the other code in the function. 
     } 
      
     // Move cursor between hours and minutes. 
