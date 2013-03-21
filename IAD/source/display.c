@@ -328,26 +328,22 @@ void lcd_display_alarmstatus(bool alarmA, bool alarmB)
     {
         if(alarmB)  
         {
-            char alarmStatus[4] = "|AB";
-            lcd_display_string_at(alarmStatus, 13, 1);
+            lcd_display_string_at("|AB", 13, 1);
         }
         else
         {
-            char alarmStatus[4] = "|A ";
-            lcd_display_string_at(alarmStatus, 13, 1); 
+            lcd_display_string_at("|A ", 13, 1); 
         }
     }
     else
     {
         if(alarmB)
         {
-            char alarmStatus[4] = "| B";
-            lcd_display_string_at(alarmStatus, 13, 1);
+            lcd_display_string_at("| B", 13, 1);
         }
         else
         {
-            char alarmStatus[4] = "|  ";
-            lcd_display_string_at(alarmStatus, 13, 1); 
+            lcd_display_string_at("|  ", 13, 1); 
         }
     }
     

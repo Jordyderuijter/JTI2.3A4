@@ -61,13 +61,6 @@ void menu_handle_settings_input(u_short* input_mode)
     
     if(first_call)
     {
-        p_alarm_b->tm_mday = 0;
-        p_alarm_b->tm_mon = 0;
-        p_alarm_b->tm_year = 2013;
-        p_alarm_b->tm_hour = 0;
-        p_alarm_b->tm_min = 0;
-        p_alarm_b->tm_sec = 0;
-              
         get_alarm_a(p_alarm_a);
         LogMsg_P(LOG_INFO, PSTR("Alarm A time [%d:%d:%d %d-%d-%d]"), p_alarm_a->tm_hour, p_alarm_a->tm_min, p_alarm_a->tm_sec, p_alarm_a->tm_mday, p_alarm_a->tm_mon, p_alarm_a->tm_year );
         get_alarm_b(p_alarm_b);
@@ -109,6 +102,7 @@ void menu_handle_settings_input(u_short* input_mode)
                         case 1:
                             At45dbPageWrite(2, &snooze_interval, 2);
                             break;
+                        case 2:
                         case 3:
                             set_alarm_b(p_alarm_b);
                             break;
@@ -175,10 +169,6 @@ void menu_handle_settings_input(u_short* input_mode)
                                 p_alarm_b->tm_mon++;           
                                 if(p_alarm_b->tm_mon > 11)
                                     p_alarm_b->tm_mon = 0;
-                            }
-                            else 
-                            {
-                                p_alarm_b->tm_year++; 
                             }
                             break;
                             
@@ -252,10 +242,6 @@ void menu_handle_settings_input(u_short* input_mode)
                                 if(p_alarm_b->tm_mon < 0)
                                     p_alarm_b->tm_mon = 11;
                             }
-                            else 
-                            {
-                                p_alarm_b->tm_year--;          
-                            }
                             break;
                             
                          default:
@@ -277,17 +263,10 @@ void menu_handle_settings_input(u_short* input_mode)
                 {                        
                     case 0:  
                     case 2:
+                    case 3:
                         if(cursor_position == 3)
                             cursor_position = 6;
                         else
-                            cursor_position = 3;
-                        break;
-                    case 3:
-                        if(cursor_position == 3)
-                            cursor_position = 11;
-                        else if(cursor_position == 11)
-                            cursor_position = 6;
-                        else 
                             cursor_position = 3;
                         break;
                 }
@@ -298,20 +277,12 @@ void menu_handle_settings_input(u_short* input_mode)
                 {
                     case 0:                             // Alarm A time
                     case 2:                             // Alarm B time
+                    case 3:                             // Alarm B date
                         if(cursor_position == 3)
                             cursor_position = 6;
                         else
                             cursor_position = 3;
-                        break;
-                        
-                    case 3:                             // Alarm B date
-                        if(cursor_position == 3)
-                            cursor_position = 6;
-                        else if(cursor_position == 6)
-                            cursor_position = 11;
-                        else 
-                            cursor_position = 3;
-                        break;                  
+                        break;                             
                 }      
                 break;         
             default:
@@ -397,12 +368,9 @@ void menu_lcd_display_information(tm *p_alarm_a, tm *p_alarm_b, int snooze_inter
                 display_string[6] = '0' + p_alarm_b->tm_mon % 9 ;
             else
                 display_string[6] = '1' + p_alarm_b->tm_mon % 10 ;
-            display_string[7] = '-';  
-            display_string[8] = '0' + p_alarm_b->tm_year / 1000;
-            display_string[9] = '0' + p_alarm_b->tm_year % 1000 / 100;
-            display_string[10] = '0' + p_alarm_b->tm_year % 100 / 10;
-            display_string[11] = '0' + p_alarm_b->tm_year % 10;
-            display_string[12] = ' '; 
+            int z = 0;
+            for(z = 7; z < 13; z++)
+                display_string[z] = ' ';
             display_string[13] = '\0';
             break;
     }
