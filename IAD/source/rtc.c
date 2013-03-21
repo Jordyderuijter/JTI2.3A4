@@ -553,12 +553,14 @@ THREAD(AlarmPollingThread, arg)
         {
             VsBeep((u_char)500, 1000);              //BeepBoop, beeps with (frequency, duration)
             VsSetVolume(0,0);
+            puts("Volume on");
         }
 
         if(alarm_b!=0 && alarm_b_on)
         {
             VsBeep((u_char)1000, 1000);              //BeepBoop, beeps with (frequency, duration)
             VsSetVolume(0,0);
+            puts("Volume on");
         }
 
         if(button_cooldown_counter >= 2)
@@ -581,15 +583,16 @@ THREAD(AlarmPollingThread, arg)
             switch(kb_button_pressed())
             {
                 case KEY_ESC:
-                    if(VsGetVolume() > 0)
+                    puts("escape pressed");
+                    if(VsGetVolume() != 0)
                     {
+                        puts("volume on");
                         VsSetVolume(0, 0);
-                        puts("volume 0");
                     }
-                    else 
+                    else if(VsGetVolume() == 0)  
                     {
+                        puts("volume off");
                         VsSetVolume(100, 100);
-                        puts("volume 0");
                     } 
                     if(alarm_a != 0)
                     {

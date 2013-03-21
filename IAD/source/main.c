@@ -87,7 +87,7 @@ void menu_handle_mainscreen_input(void);
 void menu_handle_settings_input(u_short*);
 
 void get_rss(char*);
-tm* get_ntp_time(void);
+tm* get_ntp_time(tm*);
 void connect_to_internet(void);         // USE THESE TWO FUNCTIONS FROM inet.h AFTER MAKEFILE CAN BE EDITED
 
 int ConnectToStream(void);
@@ -145,7 +145,7 @@ int main(void)
     NutSleep(1000);     // Sleep is required to be able to read the ESC key below.
     if(kb_button_is_pressed(KEY_ESC) || is_first_startup)        // Go to timezone setup
     {
-        lcd_display_timezone_setup();           // RESETS CUR SOR, NEEDS FIXING!     
+        lcd_display_timezone_setup();  
         lcd_show_cursor(true);
         input_mode = 2;
         if(is_first_startup)
@@ -174,10 +174,12 @@ int main(void)
     char * string = malloc(4000 * sizeof(char)); 
     get_rss(string);
     lcd_set_rss_information(string);
+    
 #ifdef USE_INTERNET
     ConnectToStream();
     PlayStream(); 
 #endif
+    
     lcd_refresh_information();
     for (;;)
     {
@@ -276,7 +278,7 @@ void menu_handle_timezone_setup_input()
         old_timezone.tm_hour = -old_timezone.tm_hour;
         old_timezone.tm_min = -old_timezone.tm_min;
         
-        new_time.tm_hour++; // This need sto be done because else... bugs. Magical magic
+        //new_time.tm_hour++; // This need sto be done because else... bugs. Magical magic
         rtc_get_timezone_adjusted_timestamp(&new_time, &old_timezone); // Now new_time SHOULD contain UTC-0. Which it does not. Because magic.
         
         // Save the timezone offset to flash memory for use at NTP syncs.
@@ -288,6 +290,7 @@ void menu_handle_timezone_setup_input()
 
         lcd_show_cursor(false);
         input_mode = 0; // Switch input mode to mainscreen mode.
+        
         return; // Since we have switched input mode we don't need to execute the other code in the function.     // Since we have switched input mode we don't need to execute the other code in the function. 
     } 
      
@@ -355,10 +358,10 @@ void menu_handle_timezone_setup_input()
 }
 
 // USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
-tm* get_ntp_time()
-{
+tm* get_ntp_time(tm *ntp_datetime)
+{    
     time_t ntp_time = 0;
-    tm *ntp_datetime = malloc(sizeof(tm));
+//  tm *ntp_datetime = malloc(sizeof(tm));
     tm *currenttime = NULL;
     X12RtcGetClock(currenttime);
     uint32_t timeserver = 0;
@@ -366,21 +369,24 @@ tm* get_ntp_time()
     _timezone = 0;
     if((last_synch == NULL) ||(last_synch->tm_mon < currenttime->tm_mon)||(last_synch->tm_mon > currenttime->tm_mon))
     {
-        _timezone = -1 * 60 * 60; 
  
-    puts("Retrieving time");
+        puts("Retrieving time");
+
+        timeserver = inet_addr("193.67.79.202");
  
-    timeserver = inet_addr("193.67.79.202");
- 
-        if (NutSNTPGetTime(&timeserver, &ntp_time) == 0) {
-        } else {
+        if (NutSNTPGetTime(&timeserver, &ntp_time) == 0)
+        {
+        }
+        else
+        {
             NutSleep(1000);
             puts("Failed to retrieve time.");
         }
-    ntp_datetime = localtime(&ntp_time);
-    LedControl(LED_OFF);
-    X12RtcSetClock(ntp_datetime);
-    last_synch = ntp_datetime;
+    
+        *ntp_datetime = *localtime(&ntp_time);
+        LedControl(LED_OFF);
+        X12RtcSetClock(ntp_datetime);
+        last_synch = ntp_datetime;
     }
     else
     {
@@ -454,17 +460,19 @@ void _main_init()
     sei();
     LedControl(LED_ON);
     
-//#ifdef USE_INTERNET
+#ifdef USE_INTERNET
     connect_to_internet();
-    X12RtcSetClock(get_ntp_time());
-    tm* p_time = get_ntp_time();
-   // LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
+    tm* p_time = malloc(sizeof(tm));
+    get_ntp_time(p_time);
+    LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
     tm timezone;
     At45dbPageRead(1, &timezone, sizeof(tm));
-    rtc_get_timezone_adjusted_timestamp(p_time, &timezone);
-   // LogMsg_P(LOG_INFO, PSTR("Timezone adjusted time at NTP sync [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
+    rtc_get_timezone_adjusted_timestamp(get_ntp_time(p_time), &timezone);
+    //rtc_get_timezone_adjusted_timestamp(p_time, &timezone);
+    //LogMsg_P(LOG_INFO, PSTR("Timezone adjusted time at NTP sync [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
     X12RtcSetClock(p_time);
-//#endif
+    free(p_time);
+#endif
 }
 
 /* ����������������������������������������������������������������������� */
@@ -664,72 +672,72 @@ int play(FILE *stream)
 
 THREAD(StreamPlayer, arg)
 {
-	FILE *stream = (FILE *) arg;
-	size_t rbytes = 0;
-	char *mp3buf;
-	int result = NOK;
-	int nrBytesRead = 0;
-	unsigned char iflag;
+    FILE *stream = (FILE *) arg;
+    size_t rbytes = 0;
+    char *mp3buf;
+    int result = NOK;
+    int nrBytesRead = 0;
+    unsigned char iflag;
 
-	if( 0 != NutSegBufInit(8192) )
-	{
-		// Reset global buffer
-		iflag = VsPlayerInterrupts(0);
-		NutSegBufReset();
-		VsPlayerInterrupts(iflag);
+    if( 0 != NutSegBufInit(8192) )
+    {
+            // Reset global buffer
+            iflag = VsPlayerInterrupts(0);
+            NutSegBufReset();
+            VsPlayerInterrupts(iflag);
 
-		result = OK;
-	}
+            result = OK;
+    }
 
-	if( OK == result )
-	{
-		if( -1 == VsPlayerInit() )
-		{
-			if( -1 == VsPlayerReset(0) )
-			{
-				result = NOK;
-			}
-		}
-	}
+    if( OK == result )
+    {
+            if( -1 == VsPlayerInit() )
+            {
+                    if( -1 == VsPlayerReset(0) )
+                    {
+                            result = NOK;
+                    }
+            }
+    }
 
-	for(;;)
-	{
-        iflag = VsPlayerInterrupts(0);
-        mp3buf = NutSegBufWriteRequest(&rbytes);
-        VsPlayerInterrupts(iflag);
+    for(;;)
+    {
+    iflag = VsPlayerInterrupts(0);
+    mp3buf = NutSegBufWriteRequest(&rbytes);
+    VsPlayerInterrupts(iflag);
 
-		if( VS_STATUS_RUNNING != VsGetStatus() )
-		{
-			
-                        VsPlayerKick();
-		}
+            if( VS_STATUS_RUNNING != VsGetStatus() )
+            {
 
-		while( rbytes )
-		{
-			nrBytesRead = fread(mp3buf,1,rbytes,stream);                                  
-			if( nrBytesRead > 0 )
-			{
-				iflag = VsPlayerInterrupts(0);
-				mp3buf = NutSegBufWriteCommit(nrBytesRead);
-				VsPlayerInterrupts(iflag);
-				if( nrBytesRead < rbytes && nrBytesRead < 512 )
-				{
-					NutSleep(250);
-				}
-			}
-			else
-			{
-				break;
-			}
-			rbytes -= nrBytesRead;
+                    VsPlayerKick();
+            }
 
-			if( nrBytesRead <= 0 )
-			{
-				break;
-			}
-		}
-        NutSleep(100);
-	}
+            while( rbytes )
+            {
+                    nrBytesRead = fread(mp3buf,1,rbytes,stream);                                  
+                    if( nrBytesRead > 0 )
+                    {
+                            iflag = VsPlayerInterrupts(0);
+                            mp3buf = NutSegBufWriteCommit(nrBytesRead);
+                            VsPlayerInterrupts(iflag);
+                            if( nrBytesRead < rbytes && nrBytesRead < 512 )
+                            {
+                                    NutSleep(250);
+                            }
+                    }
+                    else
+                    {
+                            break;
+                    }
+                    rbytes -= nrBytesRead;
+
+                    if( nrBytesRead <= 0 )
+                    {
+                            break;
+                    }
+            }
+    NutSleep(100);
+    }
 }
 
 void display_config()
@@ -810,6 +818,8 @@ void get_rss(char * string)
             fgets(string, rss_length+1, rss);              
             //printf("ZIN 8: %s\n", string);
         }
+        
+        free(data);
 }
 
 /* ---------- end of module ------------------------------------------------ */
