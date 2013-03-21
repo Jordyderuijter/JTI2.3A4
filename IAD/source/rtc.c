@@ -254,13 +254,13 @@ int X12RtcGetAlarm(int idx, struct _tm *tm, int *aflgs)
         if (data[3] & X12RTC_DTA_EDT)
         {
             *aflgs |= RTC_ALARM_MDAY;
-            data[1] &= 0b01111111;
+            data[3] &= 0b01111111;
             tm->tm_mday = BCD2BIN(data[3]);
         }
         if (data[4] & X12RTC_MOA_EMO)
         {
             *aflgs |= RTC_ALARM_MONTH;
-            data[1] &= 0b01111111;
+            data[4] &= 0b01111111;
             tm->tm_mon = BCD2BIN(data[4]);
         }
         if (data[6] & X12RTC_DWA_EDW)
