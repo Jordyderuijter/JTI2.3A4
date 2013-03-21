@@ -228,115 +228,116 @@ void menu_handle_mainscreen_input()
     } 
 }
 
-/**
- * Handles input in 'timezone setup mode';
- */
-void menu_handle_timezone_setup_input()
-{
-    static int cursor_position = 11;            // 11 = hours, 14 = minutes.
-    static tm utc_offset;
-    static tm* p_utc_offset = &utc_offset;
-    static char display_string[7];
-    bool cursor_position_changed = false;
-    
-    if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen.
-    {
-        if(p_utc_offset->tm_hour < 0)
-                p_utc_offset->tm_min *= -1; 
-        
-        // Get UTC-0.
-        tm new_time;            // This is going to contain the new time, based on clocktime - timezone.
-        tm old_timezone;        // This is used in the clocktime - timezone calculation.
-        
-        X12RtcGetClock(&new_time);
-        At45dbPageRead(1, &old_timezone, sizeof(tm));
-        
-        old_timezone.tm_hour = -old_timezone.tm_hour;
-        old_timezone.tm_min = -old_timezone.tm_min;
-        
-        new_time.tm_hour++;             // This need sto be done because else... bugs. Magical magic
-        rtc_get_timezone_adjusted_timestamp(&new_time, &old_timezone);  // Now new_time SHOULD contain UTC-0. Which it does not. Because magic.
-        
-        // Save the timezone offset to flash memory for use at NTP syncs.
-        At45dbPageWrite(1, p_utc_offset, sizeof(tm));
+/** 
+ * Converts a time offset to a char array that can be displayed 
+ * @param p_utc_offset pointer to the time offset 
+ * @param p_display_string char array to be displayed 
+ */ 
+void convert_p_utc_offset_to_display_string(tm* p_utc_offset, char* p_display_string) 
+{ 
+    if(p_utc_offset->tm_hour > 0) 
+        p_display_string[0] = '+'; 
+    else if(p_utc_offset->tm_hour < 0) 
+        p_display_string[0] = '-'; 
+    else 
+        p_display_string[0] = ' '; 
+     
+    p_display_string[1] = '0' + abs(p_utc_offset->tm_hour) / 10; 
+    p_display_string[2] = '0' + abs(p_utc_offset->tm_hour) % 10; 
+    p_display_string[3] = ':'; 
+    p_display_string[4] = '0' + p_utc_offset->tm_min / 10; 
+    p_display_string[5] = '0' + p_utc_offset->tm_min % 10; 
+    p_display_string[6] = '\0'; 
+} 
 
-        // Write new time to clock.
-        rtc_get_timezone_adjusted_timestamp(&new_time, p_utc_offset);   // Add new timezone to UTC-0!
-        X12RtcSetClock(&new_time);                                      // Save value to clock.
-
-        lcd_show_cursor(false);
-        input_mode = 0; // Switch input mode to mainscreen mode.           
-        return;         // Since we have switched input mode we don't need to execute the other code in the function.
-    }
-    
-    // Move cursor between hours and minutes.
-    if(kb_button_is_pressed(KEY_LEFT) || kb_button_is_pressed(KEY_RIGHT))
-    {
-        if(cursor_position == 11)
-            cursor_position = 14;
-        else
-            cursor_position = 11;       
-        lcd_place_cursor_at(cursor_position, 0);
-    }
-    
-    if(cursor_position == 11)               // Position of 'ten-hours'
-    {
-        if(kb_button_is_pressed(KEY_UP))
-        {            
-            p_utc_offset->tm_hour++;
-            
-            if(p_utc_offset->tm_hour > 14)
-                p_utc_offset->tm_hour = -12;
-            lcd_display_string_at(display_string, 10, 0);  
-        }
-        else if(kb_button_is_pressed(KEY_DOWN))
-        {                      
-            p_utc_offset->tm_hour--;
-            
-            if(p_utc_offset->tm_hour < -12)
-                p_utc_offset->tm_hour = 14;
-            lcd_display_string_at(display_string, 10, 0);  
-        }
-    }
-    else        // Set the minutes in 15 minutes/button press.
-    {
-        if(kb_button_is_pressed(KEY_UP))
-        {            
-            p_utc_offset->tm_min += 15;
-            
-            if(p_utc_offset->tm_min >= 60)
-                p_utc_offset->tm_min = 0;
-            lcd_display_string_at(display_string, 10, 0);  
-        }
-        else if(kb_button_is_pressed(KEY_DOWN))
-        {            
-            p_utc_offset->tm_min -= 15;
-            
-            if(p_utc_offset->tm_min < 0)
-                p_utc_offset->tm_min = 45;
-            lcd_display_string_at(display_string, 10, 0);  
-        }
-    }
-    
-    if(p_utc_offset->tm_hour > 0)
-        display_string[0] = '+';
-    else if(p_utc_offset->tm_hour < 0)
-        display_string[0] = '-';
-    else
-        display_string[0] = ' ';
-    
-    display_string[1] = '0' + abs(p_utc_offset->tm_hour) / 10;
-    display_string[2] = '0' + abs(p_utc_offset->tm_hour) % 10;
-    display_string[3] = ':';
-    display_string[4] = '0' + p_utc_offset->tm_min / 10;
-    display_string[5] = '0' + p_utc_offset->tm_min % 10;
-    display_string[6] = '\0';
-    
-   
+/** 
+ * Handles input in 'timezone setup mode'; 
+ */ 
+void menu_handle_timezone_setup_input() 
+{ 
+    static int cursor_position = 11;            // 11 = hours, 14 = minutes. 
+    static tm utc_offset; 
+    static tm* p_utc_offset = &utc_offset; 
+    static char display_string[7]; 
+    bool cursor_position_changed = false; 
+             
+    if(kb_button_is_pressed(KEY_OK))            // Accept the current timezone offset and leave the setup screen. 
+    { 
+        tm timestamp; 
+        X12RtcGetClock(&timestamp); 
+        //_correct_timestamp_with_timezone(&timestamp, utc_offset);     Can this be done trough NTP?? 
+         
+        // Set new time 
+        timestamp.tm_hour += p_utc_offset->tm_hour;    // Is going to give problems with the day/month/years!!! (28 feb, 22:00 + 8 hours will give 28 feb 06:00?) 
+        timestamp.tm_min += p_utc_offset->tm_min;   // Is going to give problems with the day/month/years!!! 
+        X12RtcSetClock(&timestamp); 
+         
+        lcd_show_cursor(false); 
+        input_mode = 0; // Switch input mode to mainscreen mode.            
+        return;         // Since we have switched input mode we don't need to execute the other code in the function. 
+    } 
+     
+    // Move cursor between hours and minutes. 
+    if(kb_button_is_pressed(KEY_LEFT) || kb_button_is_pressed(KEY_RIGHT)) 
+    { 
+        if(cursor_position == 11) 
+            cursor_position = 14; 
+        else 
+            cursor_position = 11;        
+        lcd_place_cursor_at(cursor_position, 0); 
+    } 
+     
+    if(cursor_position == 11)               // Position of 'ten-hours' 
+    { 
+        if(kb_button_is_pressed(KEY_UP)) 
+        {    
+            p_utc_offset->tm_hour++; 
+             
+            if(p_utc_offset->tm_hour > 14) 
+                p_utc_offset->tm_hour = -12; 
+             
+            convert_p_utc_offset_to_display_string(p_utc_offset, display_string); 
+            lcd_display_string_at(display_string, 10, 0); 
+        } 
+        else if(kb_button_is_pressed(KEY_DOWN)) 
+        {                       
+            p_utc_offset->tm_hour--; 
+             
+            if(p_utc_offset->tm_hour < -12) 
+                p_utc_offset->tm_hour = 14; 
+             
+            convert_p_utc_offset_to_display_string(p_utc_offset, display_string); 
+            lcd_display_string_at(display_string, 10, 0);   
+        } 
+    } 
+    else        // Set the minutes in 15 minutes/button press. 
+    { 
+        if(kb_button_is_pressed(KEY_UP)) 
+        {             
+            p_utc_offset->tm_min += 15; 
+             
+            if(p_utc_offset->tm_min >= 60) 
+                p_utc_offset->tm_min = 0; 
+             
+            convert_p_utc_offset_to_display_string(p_utc_offset, display_string); 
+            lcd_display_string_at(display_string, 10, 0);   
+        } 
+        else if(kb_button_is_pressed(KEY_DOWN)) 
+        {             
+            p_utc_offset->tm_min -= 15; 
+             
+            if(p_utc_offset->tm_min < 0) 
+                p_utc_offset->tm_min = 45; 
+             
+            convert_p_utc_offset_to_display_string(p_utc_offset, display_string); 
+            lcd_display_string_at(display_string, 10, 0);   
+        } 
+    } 
+ 
     if(cursor_position_changed)
-    {
-        lcd_place_cursor_at(cursor_position, 0);
-    }
+    { 
+        lcd_place_cursor_at(cursor_position, 0); 
+    } 
 }
 
 // USE THIS FUNCTION FROM inet.h WHEN MAKEFILE CAN BE EDITED!
