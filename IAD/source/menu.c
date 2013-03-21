@@ -367,9 +367,9 @@ void menu_lcd_display_information(tm *p_alarm_a, tm *p_alarm_b, int snooze_inter
             if(p_alarm_b->tm_mon / 9 == 1)
                 display_string[6] = '0' + p_alarm_b->tm_mon % 9 ;
             else
-                display_string[6] = '1' + p_alarm_b->tm_mon % 10 ;
+                display_string[6] = '1' + p_alarm_b->tm_mon % 10;
             int z = 0;
-            for(z = 7; x < 13; z++)
+            for(z = 7; z < 13; z++)
                 display_string[z] = ' '; 
             display_string[13] = '\0';
             break;

@@ -39,8 +39,8 @@
 //static int display_mode = 0;                // The current display mode. 0=Main, 1=Settings menu, 2=timezone setup
 static int lcd_backlight_time = 0;          // Used for temporarily lighting up the display. (time in ~500ms/half seconds)
 static int offset = 0;                      // The offset of the information scrolling.
-static char information[1000];             // The information displayed on the LCD screen.
-static char rss_information[10000];
+static char information[5000];             // The information displayed on the LCD screen.
+static char rss_information[5000];
 static char radio_information[100];
 bool alarmstatus_changed = true;
 bool show_rss = false;
@@ -328,29 +328,24 @@ void lcd_display_alarmstatus(bool alarmA, bool alarmB)
     {
         if(alarmB)  
         {
-            char alarmStatus[4] = "|AB";
-            lcd_display_string_at(alarmStatus, 13, 1);
+            lcd_display_string_at("|AB", 13, 1);
         }
         else
         {
-            char alarmStatus[4] = "|A ";
-            lcd_display_string_at(alarmStatus, 13, 1); 
+            lcd_display_string_at("|A ", 13, 1); 
         }
     }
     else
     {
         if(alarmB)
         {
-            char alarmStatus[4] = "| B";
-            lcd_display_string_at(alarmStatus, 13, 1);
+            lcd_display_string_at("| B", 13, 1);
         }
         else
         {
-            char alarmStatus[4] = "|  ";
-            lcd_display_string_at(alarmStatus, 13, 1); 
+            lcd_display_string_at("|  ", 13, 1); 
         }
-    }
-    
+    }  
 }
 
 /*
