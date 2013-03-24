@@ -104,7 +104,9 @@ void menu_handle_settings_input(u_short* input_mode)
                             break;
                         case 2:
                         case 3:
+                            p_alarm_b->tm_mon++;
                             set_alarm_b(p_alarm_b);
+                            p_alarm_b->tm_mon--;
                             break;
                     }
                 }

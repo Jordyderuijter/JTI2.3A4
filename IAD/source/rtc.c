@@ -506,7 +506,7 @@ void get_alarm_a(tm* gmt)
  */
 void set_alarm_b(tm* time)
 {
-    time->tm_mon += 1;          // This should be added because the received date has a [0 - 11] range.
+    //time->tm_mon += 1;          // This should be added because the received date has a [0 - 11] range.
     
     X12RtcSetAlarm(1, time, 0b00011110);
     alarm_b_on = 1;
