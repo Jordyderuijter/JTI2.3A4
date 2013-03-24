@@ -506,6 +506,8 @@ void get_alarm_a(tm* gmt)
  */
 void set_alarm_b(tm* time)
 {
+    time->tm_mon += 1;          // This should be added because the received date has a [0 - 11] range.
+    
     X12RtcSetAlarm(1, time, 0b00011110);
     alarm_b_on = 1;
     alarmstatus_changed = true;
@@ -567,8 +569,8 @@ THREAD(AlarmPollingThread, arg)
 
         if(button_cooldown_counter >= 2)
         {
-                button_cooldown = false;
-                button_cooldown_counter = 0;
+            button_cooldown = false;
+            button_cooldown_counter = 0;
         }
     
         if(kb_button_is_pressed(KEY_ALT) && alarm_a!=0)

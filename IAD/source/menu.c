@@ -62,9 +62,9 @@ void menu_handle_settings_input(u_short* input_mode)
     if(first_call)
     {
         get_alarm_a(p_alarm_a);
-        LogMsg_P(LOG_INFO, PSTR("Alarm A time [%d:%d:%d %d-%d-%d]"), p_alarm_a->tm_hour, p_alarm_a->tm_min, p_alarm_a->tm_sec, p_alarm_a->tm_mday, p_alarm_a->tm_mon, p_alarm_a->tm_year );
+        LogMsg_P(LOG_INFO, PSTR("Alarm A time [%d:%d]"), p_alarm_a->tm_hour, p_alarm_a->tm_min);
         get_alarm_b(p_alarm_b);
-        LogMsg_P(LOG_INFO, PSTR("Alarm B time [%d:%d:%d %d-%d-%d]"), p_alarm_b->tm_hour, p_alarm_b->tm_min, p_alarm_b->tm_sec, p_alarm_b->tm_mday, p_alarm_b->tm_mon, p_alarm_b->tm_year );
+        LogMsg_P(LOG_INFO, PSTR("Alarm B time [%d:%d %d-%d]"), p_alarm_b->tm_hour, p_alarm_b->tm_min, p_alarm_b->tm_mday, p_alarm_b->tm_mon);
         get_snooze(&snooze_interval); 
     }
     
@@ -117,6 +117,7 @@ void menu_handle_settings_input(u_short* input_mode)
                 {
                     switch(menu_item)
                     {
+                        // Alarm A time
                         case 0:                     
                             if(cursor_position == 3)
                             {
@@ -133,13 +134,15 @@ void menu_handle_settings_input(u_short* input_mode)
                                     p_alarm_a->tm_min = 0;
                             }
                             break;
-                            
+                        
+                        // Alarm A snooze
                         case 1:                      
                             snooze_interval++;
                             if(snooze_interval > 120)
                                 snooze_interval = 0;
                             break;
                             
+                        // Alarm B time
                         case 2:                   
                             if(cursor_position == 3)
                             {
@@ -156,7 +159,8 @@ void menu_handle_settings_input(u_short* input_mode)
                                     p_alarm_b->tm_min = 0;
                             }
                             break;
-                            
+                        
+                        // Alarm B date
                         case 3:
                             if(cursor_position == 3)
                             {
@@ -191,6 +195,7 @@ void menu_handle_settings_input(u_short* input_mode)
                 {
                     switch(menu_item)
                     {
+                        // Alarm A time
                         case 0:
                             if(cursor_position == 3)
                             {
@@ -207,13 +212,16 @@ void menu_handle_settings_input(u_short* input_mode)
                                     p_alarm_a->tm_min = 59;
                             }
                             break;
+                        
                             
+                        // Alarm A snooze
                         case 1:     
                             snooze_interval--;
                             if(snooze_interval < 0)
                                 snooze_interval = 120;
                             break;
-                            
+                         
+                        // Alarm B time
                         case 2:     
                             if(cursor_position == 3)
                             {
@@ -228,7 +236,8 @@ void menu_handle_settings_input(u_short* input_mode)
                                     p_alarm_b->tm_min = 59;
                             }
                             break;
-                            
+                         
+                        // Alarm B date
                         case 3:     
                             if(cursor_position == 3)
                             {
