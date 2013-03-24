@@ -159,12 +159,13 @@ int main(void)
     //Stay in startup screen and don't start threads yet.
     while(input_mode == 2)
     {
-        NutSleep(200);
+        NutSleep(150);  // Used to be 200, which felt a bit too unresponsive.
         menu_handle_timezone_setup_input();
         // If a key is pressed, light up the LCD screen.
         if((kb_get_buttons_pressed_raw() ^ 0xFFFF) != 0)
             lcd_backlight_on(20);
     }
+    
     //instellingen bij opstarten hier:
     display_config(); 
     
@@ -247,8 +248,8 @@ void convert_p_utc_offset_to_display_string(tm* p_utc_offset, char* p_display_st
     p_display_string[1] = '0' + abs(p_utc_offset->tm_hour) / 10; 
     p_display_string[2] = '0' + abs(p_utc_offset->tm_hour) % 10; 
     p_display_string[3] = ':'; 
-    p_display_string[4] = '0' + p_utc_offset->tm_min / 10; 
-    p_display_string[5] = '0' + p_utc_offset->tm_min % 10; 
+    p_display_string[4] = '0' + abs(p_utc_offset->tm_min) / 10; 
+    p_display_string[5] = '0' + abs(p_utc_offset->tm_min) % 10; 
     p_display_string[6] = '\0'; 
 } 
 
@@ -265,34 +266,27 @@ void menu_handle_timezone_setup_input()
              
     if(kb_button_is_pressed(KEY_OK)) // Accept the current timezone offset and leave the setup screen.
     {
-        if(p_utc_offset->tm_hour < 0)
+        // Only adjust NTP if there is an actual difference.
+        // In fact, adjusting with timezone '0' seems to cause bugs in the localtime function used in get_timezone_adjusted_timestamp!
+        if(abs(p_utc_offset->tm_hour) > 0 || abs(p_utc_offset->tm_min) > 0)
+        {
+            if(p_utc_offset->tm_hour < 0)
                 p_utc_offset->tm_min *= -1;
+            
+            tm* p_clock_time = malloc(sizeof(tm));
+            X12RtcGetClock(p_clock_time);
+            rtc_get_timezone_adjusted_timestamp(p_clock_time, p_utc_offset);
+            X12RtcSetClock(p_clock_time);
+            free(p_clock_time);
+        }
         
-        // Get UTC-0.
-        tm new_time; // This is going to contain the new time, based on clocktime - timezone.
-        tm old_timezone; // This is used in the clocktime - timezone calculation.
+        At45dbPageWrite(1, p_utc_offset, sizeof(tm));   // Save timezone to memory.
         
-        X12RtcGetClock(&new_time);
-        At45dbPageRead(1, &old_timezone, sizeof(tm));
-        
-        old_timezone.tm_hour = -old_timezone.tm_hour;
-        old_timezone.tm_min = -old_timezone.tm_min;
-        
-        //new_time.tm_hour++; // This need sto be done because else... bugs. Magical magic
-        rtc_get_timezone_adjusted_timestamp(&new_time, &old_timezone); // Now new_time SHOULD contain UTC-0. Which it does not. Because magic.
-        
-        // Save the timezone offset to flash memory for use at NTP syncs.
-        At45dbPageWrite(1, p_utc_offset, sizeof(tm));
-
-        // Write new time to clock.
-        rtc_get_timezone_adjusted_timestamp(&new_time, p_utc_offset); // Add new timezone to UTC-0!
-        X12RtcSetClock(&new_time); // Save value to clock.
-
         lcd_show_cursor(false);
         input_mode = 0; // Switch input mode to mainscreen mode.
-        
-        return; // Since we have switched input mode we don't need to execute the other code in the function.     // Since we have switched input mode we don't need to execute the other code in the function. 
-    } 
+            
+        return;
+    }
      
     // Move cursor between hours and minutes. 
     if(kb_button_is_pressed(KEY_LEFT) || kb_button_is_pressed(KEY_RIGHT)) 
@@ -443,7 +437,7 @@ void _main_init()
     X12Init();
     if (X12RtcGetClock(&gmt) == 0)
     {
-		LogMsg_P(LOG_INFO, PSTR("RTC time [%02d:%02d:%02d %02d-%02d-%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec, gmt.tm_mday, gmt.tm_mon, gmt.tm_year );
+		LogMsg_P(LOG_INFO, PSTR("RTCC time at startup [%02d:%02d:%02d %02d-%02d-%02d]"), gmt.tm_hour, gmt.tm_min, gmt.tm_sec, gmt.tm_mday, gmt.tm_mon, gmt.tm_year );
     }
     At45dbInit();
     RcInit();
@@ -748,11 +742,17 @@ void display_config()
     lcd_display_string_at(inet_ntoa(confnet.cdn_ip_addr) ,0,0);
     At45dbPageRead(1, timezone, sizeof(tm));
     strcpy (str,"Timezone: ");
-    str[10] = '0' + timezone->tm_hour / 10;
-    str[11] = '0' + timezone->tm_hour % 10;
+    
+    if(timezone->tm_hour < 0)
+        str[9] = '-';
+    else if(timezone->tm_hour > 0)
+        str[9] = '+';
+    
+    str[10] = '0' + abs(timezone->tm_hour) / 10;
+    str[11] = '0' + abs(timezone->tm_hour) % 10;
     str[12] = ':';
-    str[13] = '0' + timezone->tm_min / 10;
-    str[14] = '0' + timezone->tm_min % 10;
+    str[13] = '0' + abs(timezone->tm_min) / 10;
+    str[14] = '0' + abs(timezone->tm_min) % 10;
     str[15] = '\0';
     //lcd_display_string_at("Timezone: " timezone ,0,1);
     lcd_display_string_at(str ,0,1);
