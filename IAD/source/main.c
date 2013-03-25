@@ -154,6 +154,24 @@ int main(void)
             At45dbPageWrite(0, &is_first_startup, 1);
         }
     }
+    else
+    {
+        tm* p_time = malloc(sizeof(tm));
+        X12RtcGetClock(p_time);
+        
+        // Fetch timezone
+        tm* timezone = malloc(sizeof(tm));;
+        At45dbPageRead(1, timezone, sizeof(tm));
+
+        //rtc_get_timezone_adjusted_timestamp(get_ntp_time(p_time), &timezone);
+        rtc_get_timezone_adjusted_timestamp(p_time, timezone);
+        LogMsg_P(LOG_INFO, PSTR("Timezone adjusted time at startup [%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
+        X12RtcSetClock(p_time);
+        
+        free(timezone);
+        free (p_time);
+    }
+        
 #endif
     
     //Stay in startup screen and don't start threads yet.
@@ -456,16 +474,23 @@ void _main_init()
     
 #ifdef USE_INTERNET
     connect_to_internet();
+    
+    // Get UTC-0 time through NTP
     tm* p_time = malloc(sizeof(tm));
     get_ntp_time(p_time);
     LogMsg_P(LOG_INFO, PSTR("NTP time [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
-    tm timezone;
-    At45dbPageRead(1, &timezone, sizeof(tm));
-    rtc_get_timezone_adjusted_timestamp(get_ntp_time(p_time), &timezone);
-    //rtc_get_timezone_adjusted_timestamp(p_time, &timezone);
-    //LogMsg_P(LOG_INFO, PSTR("Timezone adjusted time at NTP sync [%02d:%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_sec, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
-    X12RtcSetClock(p_time);
+    
+    // Fetch timezone
+    /*tm* timezone = malloc(sizeof(tm));;
+    At45dbPageRead(1, timezone, sizeof(tm));
+    
+    //rtc_get_timezone_adjusted_timestamp(get_ntp_time(p_time), &timezone);
+    rtc_get_timezone_adjusted_timestamp(p_time, timezone);
+    LogMsg_P(LOG_INFO, PSTR("Timezone adjusted time at NTP sync [%02d:%02d] [%02d-%02d-%02d]"), p_time->tm_hour, p_time->tm_min, p_time->tm_yday, p_time->tm_mon, p_time->tm_year );
+    X12RtcSetClock(p_time);*/
+    
     free(p_time);
+    //free(timezone);
 #endif
 }
 
